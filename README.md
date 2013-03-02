@@ -31,7 +31,7 @@ Put these lines in your Makefile so it knows how to compile assembly:
     %.S: %.cpp ; $(COMPILE.cpp) -g -S $(OUTPUT_OPTION) $<
 
 Function Documentation
-======================
+----------------------
 
 ### (disaster-find-parent-dirs &optional FILE)
 
