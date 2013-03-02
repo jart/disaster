@@ -27,6 +27,8 @@
 
 ;;; Commentary:
 
+;; ![Screenshot](http://i.imgur.com/vl2OD3P.png)
+;;
 ;; Disaster shows you assembly code for the C/C++ file being currently edited
 ;; in a separate window. If you're using Clang, it'll also hop to the line in
 ;; the assembly file that corresponds to to the C/C++ text under your cursor.
