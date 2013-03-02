@@ -1,4 +1,4 @@
-;;; disaster.el --- Disassemble C/C++ code under cursor in Emacs (with caveats)
+;;; disaster.el --- Disassemble C/C++ code under cursor in Emacs
 
 ;; Copyright (C) 2013 Justine Tunney.
 
