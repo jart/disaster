@@ -115,91 +115,6 @@
 
 (defvar save-place)
 
-(defun disaster-find-parent-dirs (&optional file)
-  "Returns a list of parent directories with trailing slashes.
-
-For example:
-
-    (disaster-find-parent-dirs \"/home/jart/disaster-disaster.el\")
-    => (\"/home/jart/disaster-\" \"/home/jart/\" \"/home/\" \"/\")
-
-FILE defaults to `buffer-name'."
-  (let ((res nil)
-        (dir (file-name-directory
-              (expand-file-name (or file (buffer-name))))))
-    (while dir
-      (setq res (cons dir res)
-            dir (if (string-match "/[^/]+/$" dir)
-                    (substring dir 0 (+ 1 (match-beginning 0))))))
-    (reverse res)))
-
-(defun disaster-dir-has-file (dir file)
-  "Returns t if DIR contains FILE (or any file if FILE is a list).
-
-For example:
-
-    (disaster-dir-has-file \"/home/jart/\" \".bashrc\")
-    (disaster-dir-has-file \"/home/jart/\" (list \".bashrc\" \".screenrc\"))"
-  (let ((res nil)
-        (dir (file-name-as-directory dir))
-        (files (if (listp file)
-                   file
-                 (list file))))
-    (while (and files (not res))
-      (setq res (file-exists-p (concat dir (car files)))
-            files (cdr files)))
-    res))
-
-(defun disaster-find-project-root (&optional looks file)
-  "General-purpose Heuristic to detect bottom directory of project.
-
-This works by scanning parent directories of FILE (using
-`disaster-find-parent-dirs') for certain types of files like a
-`.git/` directory or a `Makefile` (which is less preferred).
-
-The canonical structure of LOOKS is a list of lists of files
-to look for in each parent directory where sublists are ordered
-from highest precedence to lowest.  However you may specify
-LOOKS as a single string or a list of strings for your
-convenience. If LOOKS is not specified, it'll default to
-`disaster-project-root-files'."
-  (let ((res nil)
-        (looks (if looks
-                   (if (listp looks)
-                       (if (listp (car looks))
-                           looks
-                         (list looks))
-                     (list (list looks)))
-                 disaster-project-root-files))
-        (parents (disaster-find-parent-dirs file)))
-    (while (and looks (null res))
-      (while (and parents (null res))
-        (setq res (disaster-dir-has-file (car parents) (car looks))
-              parents (cdr parents)))
-      (setq looks (cdr looks)))
-    res))
-
-(defun disaster--helping-hand ()
-  "If inside compile output buffer, check for common errors and provide help!"
-  (when (or (save-excursion
-              (goto-char 0)
-              (search-forward "Nothing to be done" nil t))
-            (save-excursion
-              (goto-char 0)
-              (search-forward "No rule to make target" nil t)))
-    (goto-char (max-char))
-    (insert "
-Oh no.. it didn't work :(\n
-Try putting this in your Makefile:\n
-%.S: %.c   ; $(COMPILE.c)   -g -S $(OUTPUT_OPTION) $<
-%.S: %.cc  ; $(COMPILE.cc)  -g -S $(OUTPUT_OPTION) $<
-%.S: %.cpp ; $(COMPILE.cpp) -g -S $(OUTPUT_OPTION) $<\n
-These are are generic rules that tell GNU Make how to compile
-GNU Gas assembly files for C/C++.\n
-It's also STRONGLY recommended that you use Clang so disaster can
-jump to the corresponding line of assembly.
-")))
-
 ;;;###autoload
 (defun disaster (&optional file line)
   "Shows assembly code for current line of C/C++ file.
@@ -264,6 +179,91 @@ is used."
             (disaster--helping-hand)
             (compilation-mode)
             (display-buffer assembler)))))))
+
+(defun disaster--find-parent-dirs (&optional file)
+  "Returns a list of parent directories with trailing slashes.
+
+For example:
+
+    (disaster--find-parent-dirs \"/home/jart/disaster-disaster.el\")
+    => (\"/home/jart/disaster-\" \"/home/jart/\" \"/home/\" \"/\")
+
+FILE defaults to `buffer-name'."
+  (let ((res nil)
+        (dir (file-name-directory
+              (expand-file-name (or file (buffer-name))))))
+    (while dir
+      (setq res (cons dir res)
+            dir (if (string-match "/[^/]+/$" dir)
+                    (substring dir 0 (+ 1 (match-beginning 0))))))
+    (reverse res)))
+
+(defun disaster--dir-has-file (dir file)
+  "Returns t if DIR contains FILE (or any file if FILE is a list).
+
+For example:
+
+    (disaster--dir-has-file \"/home/jart/\" \".bashrc\")
+    (disaster--dir-has-file \"/home/jart/\" (list \".bashrc\" \".screenrc\"))"
+  (let ((res nil)
+        (dir (file-name-as-directory dir))
+        (files (if (listp file)
+                   file
+                 (list file))))
+    (while (and files (not res))
+      (setq res (file-exists-p (concat dir (car files)))
+            files (cdr files)))
+    res))
+
+(defun disaster-find-project-root (&optional looks file)
+  "General-purpose Heuristic to detect bottom directory of project.
+
+This works by scanning parent directories of FILE (using
+`disaster--find-parent-dirs') for certain types of files like a
+`.git/` directory or a `Makefile` (which is less preferred).
+
+The canonical structure of LOOKS is a list of lists of files
+to look for in each parent directory where sublists are ordered
+from highest precedence to lowest.  However you may specify
+LOOKS as a single string or a list of strings for your
+convenience. If LOOKS is not specified, it'll default to
+`disaster-project-root-files'."
+  (let ((res nil)
+        (looks (if looks
+                   (if (listp looks)
+                       (if (listp (car looks))
+                           looks
+                         (list looks))
+                     (list (list looks)))
+                 disaster-project-root-files))
+        (parents (disaster--find-parent-dirs file)))
+    (while (and looks (null res))
+      (while (and parents (null res))
+        (setq res (disaster--dir-has-file (car parents) (car looks))
+              parents (cdr parents)))
+      (setq looks (cdr looks)))
+    res))
+
+(defun disaster--helping-hand ()
+  "If inside compile output buffer, check for common errors and provide help!"
+  (when (or (save-excursion
+              (goto-char 0)
+              (search-forward "Nothing to be done" nil t))
+            (save-excursion
+              (goto-char 0)
+              (search-forward "No rule to make target" nil t)))
+    (goto-char (max-char))
+    (insert "
+Oh no.. it didn't work :(\n
+Try putting this in your Makefile:\n
+%.S: %.c   ; $(COMPILE.c)   -g -S $(OUTPUT_OPTION) $<
+%.S: %.cc  ; $(COMPILE.cc)  -g -S $(OUTPUT_OPTION) $<
+%.S: %.cpp ; $(COMPILE.cpp) -g -S $(OUTPUT_OPTION) $<\n
+These are are generic rules that tell GNU Make how to compile
+GNU Gas assembly files for C/C++.\n
+It's also STRONGLY recommended that you use Clang so disaster can
+jump to the corresponding line of assembly.
+")))
 
 (provide 'disaster)
 

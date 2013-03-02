@@ -35,41 +35,6 @@ Put these lines in your Makefile so it knows how to compile assembly:
 Function Documentation
 ----------------------
 
-### (disaster-find-parent-dirs &optional FILE)
-
-Returns a list of parent directories with trailing slashes.
-
-For example:
-
-    (disaster-find-parent-dirs "/home/jart/disaster-disaster.el")
-    => ("/home/jart/disaster-" "/home/jart/" "/home/" "/")
-
-FILE defaults to `buffer-name`.
-
-### (disaster-dir-has-file DIR FILE)
-
-Returns t if DIR contains FILE (or any file if FILE is a list).
-
-For example:
-
-    (disaster-dir-has-file "/home/jart/" ".bashrc")
-    (disaster-dir-has-file "/home/jart/" (list ".bashrc" ".screenrc"))
-
-### (disaster-find-project-root &optional LOOKS FILE)
-
-General-purpose Heuristic to detect bottom directory of project.
-
-This works by scanning parent directories of FILE (using
-`disaster-find-parent-dirs`) for certain types of files like a
-`.git/` directory or a `Makefile` (which is less preferred).
-
-The canonical structure of LOOKS is a list of lists of files
-to look for in each parent directory where sublists are ordered
-from highest precedence to lowest.  However you may specify
-LOOKS as a single string or a list of strings for your
-convenience. If LOOKS is not specified, it'll default to
-`disaster-project-root-files`.
-
 ### (disaster &optional FILE LINE)
 
 Shows assembly code for current line of C/C++ file.
@@ -93,6 +58,21 @@ will be displayed.
 
 If FILE and LINE are not specified, the current editing location
 is used.
+
+### (disaster-find-project-root &optional LOOKS FILE)
+
+General-purpose Heuristic to detect bottom directory of project.
+
+This works by scanning parent directories of FILE (using
+`disaster--find-parent-dirs`) for certain types of files like a
+`.git/` directory or a `Makefile` (which is less preferred).
+
+The canonical structure of LOOKS is a list of lists of files
+to look for in each parent directory where sublists are ordered
+from highest precedence to lowest.  However you may specify
+LOOKS as a single string or a list of strings for your
+convenience. If LOOKS is not specified, it'll default to
+`disaster-project-root-files`.
 
 -----
 <div style="padding-top:15px;color: #d0d0d0;">
