@@ -146,12 +146,15 @@ is used."
          (assembler (get-buffer-create "*Assembler*")))
     (if (not (string-match "\\.c[cp]?p?$" file))
         (message "Not C/C++ non-header file")
-      (let* ((asm-file (concat (file-name-sans-extension file) ".S"))
+      (let* ((cwd (file-name-directory (expand-file-name (buffer-name))))
+             (asm-file (concat (file-name-sans-extension file) ".S"))
              (make-root (disaster-find-project-root "Makefile" file))
              (command (if make-root
-                          (format "make %s -C %s %s"
-                                  disaster-make-flags make-root
-                                  (file-relative-name asm-file make-root))
+                          (if (equal cwd make-root)
+                              (format "make %s %s" disaster-make-flags asm-file)
+                            (format "make %s -C %s %s"
+                                    disaster-make-flags make-root
+                                    (file-relative-name asm-file make-root)))
                         (if (string-match "\\.c[cp]p?$" file)
                             (format "%s %s -o %s %s"
                                     disaster-cxx disaster-cxxflags
