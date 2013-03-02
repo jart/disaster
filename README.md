@@ -6,6 +6,7 @@ disaster.el – Disassemble C/C++ code under cursor in Emacs
 Disaster shows you assembly code for the C/C++ file being currently edited
 in a separate window. If you're using Clang, it'll also hop to the line in
 the assembly file that corresponds to to the C/C++ text under your cursor.
+Seriously, *you should install Clang*.
 
 Disaster tries to be smart about detecting the location of your Makefile and
 will fall back to invoking clang or cc manually if there's no Makefile. For
