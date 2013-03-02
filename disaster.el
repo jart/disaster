@@ -239,7 +239,9 @@ convenience. If LOOKS is not specified, it'll default to
         (parents (disaster--find-parent-dirs file)))
     (while (and looks (null res))
       (while (and parents (null res))
-        (setq res (disaster--dir-has-file (car parents) (car looks))
+        (setq res (if (disaster--dir-has-file
+                       (car parents) (car looks))
+                      (car parents))
               parents (cdr parents)))
       (setq looks (cdr looks)))
     res))
