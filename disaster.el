@@ -27,16 +27,15 @@
 
 ;;; Commentary:
 
-;; ![Screenshot](http://i.imgur.com/vl2OD3P.png)
+;; ![Screenshot](http://i.imgur.com/kMoN1m6.png)
 ;;
-;; Disaster shows you assembly code for the C/C++ file being currently edited
-;; in a separate window. If you're using Clang, it'll also hop to the line in
-;; the assembly file that corresponds to to the C/C++ text under your cursor.
-;; Seriously, *you should install Clang*.
+;; Disaster let's you press `C-c C-d` to see the compiled assembly code for the
+;; C/C++ file you're currently editing. It even jumps to and highlights the
+;; line of assembly corresponding to the line beneath your cursor.
 ;;
-;; Disaster tries to be smart about detecting the location of your Makefile and
-;; will fall back to invoking clang or cc manually if there's no Makefile. For
-;; more information, see `disaster'.
+;; It works by creating a `.o` file using make (if you have a Makefile) or the
+;; default system compiler. It then runs that file through objdump to generate
+;; the human-readable assembly.
 
 ;;; Installation:
 
@@ -48,15 +47,9 @@
 ;;       '(progn
 ;;          (require 'disaster)
 ;;          (defun my-c-mode-common-hook ()
-;;            (define-key c-mode-base-map (kbd "C-c C-c") 'compile)
-;;            (define-key c-mode-base-map (kbd "C-c C-d") 'disaster))
+;;            (define-key c-mode-base-map (kbd "C-c C-d") 'disaster)
+;;            (define-key c-mode-base-map (kbd "C-c C-c") 'compile))
 ;;          (add-hook 'c-mode-common-hook 'my-c-mode-common-hook)))
-;;
-;; Put these lines in your Makefile so it knows how to compile assembly:
-;;
-;;     %.S: %.c   ; $(COMPILE.c)   -g -S $(OUTPUT_OPTION) $<
-;;     %.S: %.cc  ; $(COMPILE.cc)  -g -S $(OUTPUT_OPTION) $<
-;;     %.S: %.cpp ; $(COMPILE.cpp) -g -S $(OUTPUT_OPTION) $<
 
 ;;; Code:
 
@@ -70,36 +63,40 @@
   :group 'disaster
   :type 'string)
 
-(defcustom disaster-cc (or (getenv "CC")
-                           (executable-find "clang")
-                           "cc")
+(defcustom disaster-cc (or (getenv "CC") "cc")
   "The command for your C compiler."
   :group 'disaster
   :type 'string)
 
-(defcustom disaster-cxx (or (getenv "CXX")
-                            (executable-find "clang++")
-                            "c++")
+(defcustom disaster-cxx (or (getenv "CXX") "c++")
   "The command for your C++ compiler."
   :group 'disaster
   :type 'string)
 
 (defcustom disaster-cflags (or (getenv "CFLAGS")
-                               "-S -g -O3 -march=native")
-  "Command line options to use when compiling C.
-   Be sure to include `-S -g`!"
+                               "-march=native")
+  "Command line options to use when compiling C."
   :group 'disaster
   :type 'string)
 
 (defcustom disaster-cxxflags (or (getenv "CXXFLAGS")
-                                 "-S -g -O3 -march=native")
-  "Command line options to use when compiling C++.
-   Be sure to include `-S -g`!"
+                                 "-march=native")
+  "Command line options to use when compiling C++.!"
   :group 'disaster
   :type 'string)
 
-(defcustom disaster-buffer-assembler "*Assembler*"
+(defcustom disaster-objdump "objdump -d -M att -Sl --no-show-raw-insn"
+  "The command name and flags for running objdump."
+  :group 'disaster
+  :type 'string)
+
+(defcustom disaster-buffer-compiler "*compilation*"
   "Buffer name to use for assembler output."
+  :group 'disaster
+  :type 'string)
+
+(defcustom disaster-buffer-assembly "*assembly*"
+  "Buffer name to use for objdump assembly output."
   :group 'disaster
   :type 'string)
 
@@ -122,67 +119,97 @@
 
 Here's the logic path it follows:
 
-- Is there a Makefile in this directory? Run `make bufname.S`.
-- Or is there a Makefile in a parent directory? Run `make -C .. bufname.S`.
-- Or is this a C file? Run `clang -g -O3 -S -o bufname.S bufname.c`
-- Or is this a C++ file? Run `clang++ -g -O3 -S -o bufname.S bufname.c`
+- Is there a Makefile in this directory? Run `make bufname.o`.
+- Or is there a Makefile in a parent directory? Run `make -C .. bufname.o`.
+- Or is this a C file? Run `cc -g -O3 -c -o bufname.o bufname.c`
+- Or is this a C++ file? Run `c++ -g -O3 -c -o bufname.o bufname.c`
 - If build failed, display errors in compile-mode.
-- If build succeeded, open bufname.S in new window while maintaining focus.
-- If clang -g output, jump and highlight corresponding line of assembly code.
-
-For example, if you're editing lol.cc and have a Makefile in your
-current directory (or a parent directory), then this function
-will run `make -C project-root -k lol.S` to compile the object
-to assembly and display it in a popup window with the current
-source line focused. If make fails, a standard compile output log
-will be displayed.
+- Run objdump inside a new window while maintaining focus.
+- Jump to line matching current line.
 
 If FILE and LINE are not specified, the current editing location
 is used."
   (interactive)
+  (save-buffer)
   (let* ((file (or file (buffer-name)))
          (line (or line (line-number-at-pos)))
          (file-line (format "%s:%d" file line))
-         (assembler (get-buffer-create "*Assembler*")))
+         (makebuf (get-buffer-create disaster-buffer-compiler))
+         (asmbuf (get-buffer-create disaster-buffer-assembly)))
     (if (not (string-match "\\.c[cp]?p?$" file))
         (message "Not C/C++ non-header file")
       (let* ((cwd (file-name-directory (expand-file-name (buffer-name))))
-             (asm-file (concat (file-name-sans-extension file) ".S"))
+             (obj-file (concat (file-name-sans-extension file) ".o"))
              (make-root (disaster-find-project-root "Makefile" file))
-             (command (if make-root
-                          (if (equal cwd make-root)
-                              (format "make %s %s" disaster-make-flags asm-file)
-                            (format "make %s -C %s %s"
-                                    disaster-make-flags make-root
-                                    (file-relative-name asm-file make-root)))
-                        (if (string-match "\\.c[cp]p?$" file)
-                            (format "%s %s -o %s %s"
-                                    disaster-cxx disaster-cxxflags
-                                    asm-file file)
-                          (format "%s %s -o %s %s"
-                                  disaster-cc disaster-cflags
-                                  asm-file file)))))
-        (if (get-buffer asm-file)
-            (kill-buffer (get-buffer asm-file)))
-        (if (and (eq 0 (shell-command command assembler))
-                 (file-exists-p asm-file))
-            (let ((buffer (find-file-noselect asm-file)))
-              (kill-buffer assembler)
-              (with-current-buffer buffer
+             (cc (if make-root
+                     (if (equal cwd make-root)
+                         (format "make %s %s" disaster-make-flags obj-file)
+                       (format "make %s -C %s %s"
+                               disaster-make-flags make-root
+                               (file-relative-name obj-file make-root)))
+                   (if (string-match "\\.c[cp]p?$" file)
+                       (format "%s %s -g -c -o %s %s"
+                               disaster-cxx disaster-cxxflags
+                               obj-file file)
+                     (format "%s %s -g -c -o %s %s"
+                             disaster-cc disaster-cflags
+                             obj-file file))))
+             (dump (format "%s %s" disaster-objdump obj-file))
+             (line-text (save-excursion
+                          (buffer-substring-no-properties
+                           (progn (beginning-of-line) (point))
+                           (progn (end-of-line) (point))))))
+        (if (and (eq 0 (progn
+                         (message (format "Running: %s" cc))
+                         (shell-command cc makebuf)))
+                 (file-exists-p obj-file))
+            (when (eq 0 (progn
+                          (message (format "Running: %s" dump))
+                          (shell-command dump asmbuf)))
+              (kill-buffer makebuf)
+              (with-current-buffer asmbuf
                 ;; saveplace.el will prevent us from hopping to a line.
                 (set (make-local-variable 'save-place) nil)
-                (hi-lock-face-phrase-buffer file-line)
-                (unless (search-forward file-line nil t)
-                  (message "Couldn't find corresponding assembly line.")))
-              (display-buffer buffer)
-              (message command))
-          (with-current-buffer assembler
+                (asm-mode)
+                (disaster--shadow-non-assembly-code))
+              (let ((oldbuf (current-buffer)))
+                (switch-to-buffer-other-window asmbuf)
+                (goto-char 0)
+                (if (or (search-forward line-text nil t)
+                        (search-forward file-line nil t))
+                    (progn
+                      (recenter)
+                      (overlay-put (make-overlay (save-excursion
+                                                   (beginning-of-line)
+                                                   (point))
+                                                 (save-excursion
+                                                   (forward-line)
+                                                   (beginning-of-line)
+                                                   (point)))
+                                   'face 'region))
+                    (message "Couldn't find corresponding assembly line."))
+                (switch-to-buffer-other-window oldbuf)))
+          (with-current-buffer makebuf
             (save-excursion
               (goto-char 0)
-              (insert (concat command "\n")))
-            (disaster--helping-hand)
+              (insert (concat cc "\n")))
             (compilation-mode)
-            (display-buffer assembler)))))))
+            (display-buffer makebuf)))))))
+
+(defun disaster--shadow-non-assembly-code ()
+  "Scans current buffer, which should be in asm-mode, and uses
+the standard `shadow' face for lines that don't appear to contain
+assembly code."
+  (remove-overlays)
+  (save-excursion
+    (goto-char 0)
+    (while (not (eobp))
+      (beginning-of-line)
+      (if (not (looking-at "[ \t]+[a-f0-9]+:[ \t]+"))
+          (let ((eol (save-excursion (end-of-line) (point))))
+            (overlay-put (make-overlay (point) eol)
+                         'face 'shadow)))
+      (forward-line))))
 
 (defun disaster--find-parent-dirs (&optional file)
   "Returns a list of parent directories with trailing slashes.
@@ -249,27 +276,6 @@ convenience. If LOOKS is not specified, it'll default to
               parents (cdr parents)))
       (setq looks (cdr looks)))
     res))
-
-(defun disaster--helping-hand ()
-  "If inside compile output buffer, check for common errors and provide help!"
-  (when (or (save-excursion
-              (goto-char 0)
-              (search-forward "Nothing to be done" nil t))
-            (save-excursion
-              (goto-char 0)
-              (search-forward "No rule to make target" nil t)))
-    (goto-char (max-char))
-    (insert "
-Oh no.. it didn't work :(\n
-Try putting this in your Makefile:\n
-%.S: %.c   ; $(COMPILE.c)   -g -S $(OUTPUT_OPTION) $<
-%.S: %.cc  ; $(COMPILE.cc)  -g -S $(OUTPUT_OPTION) $<
-%.S: %.cpp ; $(COMPILE.cpp) -g -S $(OUTPUT_OPTION) $<\n
-These are are generic rules that tell GNU Make how to compile
-GNU Gas assembly files for C/C++.\n
-It's also STRONGLY recommended that you use Clang so disaster can
-jump to the corresponding line of assembly.
-")))
 
 (provide 'disaster)
 

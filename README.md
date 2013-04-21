@@ -1,16 +1,15 @@
 disaster.el – Disassemble C/C++ code under cursor in Emacs
 ==========================================================
 
-![Screenshot](http://i.imgur.com/vl2OD3P.png)
+![Screenshot](http://i.imgur.com/kMoN1m6.png)
 
-Disaster shows you assembly code for the C/C++ file being currently edited
-in a separate window. If you're using Clang, it'll also hop to the line in
-the assembly file that corresponds to to the C/C++ text under your cursor.
-Seriously, *you should install Clang*.
+Disaster let's you press `C-c C-d` to see the compiled assembly code for the
+C/C++ file you're currently editing. It even jumps to and highlights the
+line of assembly corresponding to the line beneath your cursor.
 
-Disaster tries to be smart about detecting the location of your Makefile and
-will fall back to invoking clang or cc manually if there's no Makefile. For
-more information, see `disaster`.
+It works by creating a `.o` file using make (if you have a Makefile) or the
+default system compiler. It then runs that file through objdump to generate
+the human-readable assembly.
 
 Installation
 ------------
@@ -23,44 +22,31 @@ invoke `disaster`:
       '(progn
          (require 'disaster)
          (defun my-c-mode-common-hook ()
-           (define-key c-mode-base-map (kbd "C-c C-c") 'compile)
-           (define-key c-mode-base-map (kbd "C-c C-d") 'disaster))
+           (define-key c-mode-base-map (kbd "C-c C-d") 'disaster)
+           (define-key c-mode-base-map (kbd "C-c C-c") 'compile))
          (add-hook 'c-mode-common-hook 'my-c-mode-common-hook)))
-
-Put these lines in your Makefile so it knows how to compile assembly:
-
-    %.S: %.c   ; $(COMPILE.c)   -g -S $(OUTPUT_OPTION) $<
-    %.S: %.cc  ; $(COMPILE.cc)  -g -S $(OUTPUT_OPTION) $<
-    %.S: %.cpp ; $(COMPILE.cpp) -g -S $(OUTPUT_OPTION) $<
 
 Function Documentation
 ----------------------
 
-### (disaster &optional FILE LINE)
+### `(disaster &optional FILE LINE)`
 
 Shows assembly code for current line of C/C++ file.
 
 Here's the logic path it follows:
 
-- Is there a Makefile in this directory? Run `make bufname.S`.
-- Or is there a Makefile in a parent directory? Run `make -C .. bufname.S`.
-- Or is this a C file? Run `clang -g -O3 -S -o bufname.S bufname.c`
-- Or is this a C++ file? Run `clang++ -g -O3 -S -o bufname.S bufname.c`
+- Is there a Makefile in this directory? Run `make bufname.o`.
+- Or is there a Makefile in a parent directory? Run `make -C .. bufname.o`.
+- Or is this a C file? Run `cc -g -O3 -c -o bufname.o bufname.c`
+- Or is this a C++ file? Run `c++ -g -O3 -c -o bufname.o bufname.c`
 - If build failed, display errors in compile-mode.
-- If build succeeded, open bufname.S in new window while maintaining focus.
-- If clang -g output, jump and highlight corresponding line of assembly code.
-
-For example, if you're editing lol.cc and have a Makefile in your
-current directory (or a parent directory), then this function
-will run `make -C project-root -k lol.S` to compile the object
-to assembly and display it in a popup window with the current
-source line focused. If make fails, a standard compile output log
-will be displayed.
+- Run objdump inside a new window while maintaining focus.
+- Jump to line matching current line.
 
 If FILE and LINE are not specified, the current editing location
 is used.
 
-### (disaster-find-project-root &optional LOOKS FILE)
+### `(disaster-find-project-root &optional LOOKS FILE)`
 
 General-purpose Heuristic to detect bottom directory of project.
 
