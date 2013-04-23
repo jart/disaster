@@ -29,7 +29,7 @@
 
 ;; ![Screenshot](http://i.imgur.com/kMoN1m6.png)
 ;;
-;; Disaster let's you press `C-c C-d` to see the compiled assembly code for the
+;; Disaster lets you press `C-c C-d` to see the compiled assembly code for the
 ;; C/C++ file you're currently editing. It even jumps to and highlights the
 ;; line of assembly corresponding to the line beneath your cursor.
 ;;
