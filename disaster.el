@@ -138,7 +138,7 @@ is used."
          (asmbuf (get-buffer-create disaster-buffer-assembly)))
     (if (not (string-match "\\.c[cp]?p?$" file))
         (message "Not C/C++ non-header file")
-      (let* ((cwd (file-name-directory (expand-file-name (buffer-name))))
+      (let* ((cwd (file-name-directory (expand-file-name (buffer-file-name))))
              (obj-file (concat (file-name-sans-extension file) ".o"))
              (make-root (disaster-find-project-root "Makefile" file))
              (cc (if make-root
@@ -219,10 +219,10 @@ For example:
     (disaster--find-parent-dirs \"/home/jart/disaster-disaster.el\")
     => (\"/home/jart/disaster-\" \"/home/jart/\" \"/home/\" \"/\")
 
-FILE defaults to `buffer-name'."
+FILE defaults to `buffer-file-name'."
   (let ((res nil)
         (dir (file-name-directory
-              (expand-file-name (or file (buffer-name))))))
+              (expand-file-name (or file (buffer-file-name))))))
     (while dir
       (setq res (cons dir res)
             dir (if (string-match "/[^/]+/$" dir)
