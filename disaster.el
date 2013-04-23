@@ -131,7 +131,7 @@ If FILE and LINE are not specified, the current editing location
 is used."
   (interactive)
   (save-buffer)
-  (let* ((file (or file (buffer-name)))
+  (let* ((file (or file (file-name-nondirectory (buffer-file-name))))
          (line (or line (line-number-at-pos)))
          (file-line (format "%s:%d" file line))
          (makebuf (get-buffer-create disaster-buffer-compiler))
