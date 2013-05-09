@@ -3,7 +3,7 @@ disaster.el – Disassemble C/C++ code under cursor in Emacs
 
 ![Screenshot](http://i.imgur.com/kMoN1m6.png)
 
-Disaster let's you press `C-c C-d` to see the compiled assembly code for the
+Disaster lets you press `C-c d` to see the compiled assembly code for the
 C/C++ file you're currently editing. It even jumps to and highlights the
 line of assembly corresponding to the line beneath your cursor.
 
@@ -15,16 +15,13 @@ Installation
 ------------
 
 Make sure to place `disaster.el` somewhere in the load-path and add the
-following lines to your `.emacs` file to enable the `C-c C-d` shortcut to
+following lines to your `.emacs` file to enable the `C-c d` shortcut to
 invoke `disaster`:
 
-    (eval-after-load 'cc-mode
-      '(progn
-         (require 'disaster)
-         (defun my-c-mode-common-hook ()
-           (define-key c-mode-base-map (kbd "C-c C-d") 'disaster)
-           (define-key c-mode-base-map (kbd "C-c C-c") 'compile))
-         (add-hook 'c-mode-common-hook 'my-c-mode-common-hook)))
+    (add-to-list 'load-path "/PATH/TO/DISASTER")
+    (require 'disaster)
+    (define-key c-mode-base-map (kbd "C-c d") 'disaster)
+
 
 Function Documentation
 ----------------------
