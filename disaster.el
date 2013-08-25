@@ -118,8 +118,8 @@ Here's the logic path it follows:
 
 - Is there a Makefile in this directory? Run `make bufname.o`.
 - Or is there a Makefile in a parent directory? Run `make -C .. bufname.o`.
-- Or is this a C file? Run `cc -g -O3 -c -o bufname.o bufname.c`
-- Or is this a C++ file? Run `c++ -g -O3 -c -o bufname.o bufname.c`
+- Or is this a C file? Run `cc -g -c -o bufname.o bufname.c`
+- Or is this a C++ file? Run `c++ -g -c -o bufname.o bufname.c`
 - If build failed, display errors in compile-mode.
 - Run objdump inside a new window while maintaining focus.
 - Jump to line matching current line.
