@@ -3,6 +3,7 @@
 
 ---
 [![License GPLv2](https://img.shields.io/badge/license-GPL_v2-green.svg)](http://www.gnu.org/licenses/gpl-2.0.html)
+[![MELPA](http://melpa.org/packages/disaster-badge.svg)](http://melpa.org/#/disaster)
 
 ![Screenshot](http://i.imgur.com/kMoN1m6.png)
 
