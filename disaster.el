@@ -98,7 +98,7 @@
   :group 'disaster
   :type 'string)
 
-(defcustom disaster-objdump "objdump -d -M att -Sl --no-show-raw-insn"
+(defcustom disaster-objdump "objdump -d -Sl --no-show-raw-insn"
   "The command name and flags for running objdump."
   :group 'disaster
   :type 'string)
@@ -123,6 +123,12 @@
    precedence."
   :group 'disaster
   :type '(repeat (repeat string)))
+
+(defcustom disaster-assembly-syntax "att"
+  "Syntax to use for disassembly."
+  :group 'disaster
+  :type '(radio (const :tag "AT&T" "att")
+                (const :tag "Intel" "intel")))
 
 (defvar save-place)
 
@@ -172,7 +178,8 @@ is used."
                        (t (format "%s %s -g -c -o %s %s"
                                   disaster-cc disaster-cflags
                                   obj-file file))))
-             (dump (format "%s %s" disaster-objdump obj-file))
+             (dump (format "%s -M %s %s" disaster-objdump disaster-assembly-syntax
+                           obj-file))
              (line-text (save-excursion
                           (buffer-substring-no-properties
                            (progn (beginning-of-line) (point))
