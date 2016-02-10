@@ -70,6 +70,11 @@
   :group 'disaster
   :type 'string)
 
+(defcustom disaster-f95 (or (getenv "F95") "f95")
+  "The command for your Fortran 95 compiler."
+  :group 'disaster
+  :type 'string)
+
 (defcustom disaster-cflags (or (getenv "CFLAGS")
                                "-march=native")
   "Command line options to use when compiling C."
@@ -82,7 +87,18 @@
   :group 'disaster
   :type 'string)
 
-(defcustom disaster-objdump "objdump -d -M att -Sl --no-show-raw-insn"
+(defcustom disaster-fflags (or (getenv "FCFLAGS")
+                               "-march=native")
+  "command line options to use when compiling Fortran 95."
+  :group 'disaster
+  :type 'string)
+
+(defcustom disaster-use-make t
+  "Attempt to use make to compile the current file."
+  :group 'disaster
+  :type 'string)
+
+(defcustom disaster-objdump "objdump -d -Sl --no-show-raw-insn"
   "The command name and flags for running objdump."
   :group 'disaster
   :type 'string)
@@ -107,6 +123,12 @@
    precedence."
   :group 'disaster
   :type '(repeat (repeat string)))
+
+(defcustom disaster-assembly-syntax "att"
+  "Syntax to use for disassembly."
+  :group 'disaster
+  :type '(radio (const :tag "AT&T" "att")
+                (const :tag "Intel" "intel")))
 
 (defvar save-place)
 
@@ -133,25 +155,31 @@ is used."
          (file-line (format "%s:%d" file line))
          (makebuf (get-buffer-create disaster-buffer-compiler))
          (asmbuf (get-buffer-create disaster-buffer-assembly)))
-    (if (not (string-match "\\.c[cp]?p?$" file))
-        (message "Not C/C++ non-header file")
+    (if (not (or (string-match "\\.c[cp]?p?$" file)
+                 (string-match "\\.f[90,95,03,08]" file)))
+        (message "Not C/C++/Fortran non-header file")
       (let* ((cwd (file-name-directory (expand-file-name (buffer-file-name))))
              (obj-file (concat (file-name-sans-extension file) ".o"))
              (make-root (disaster-find-project-root "Makefile" file))
-             (cc (if make-root
-                     (if (equal cwd make-root)
-                         (format "make %s %s" disaster-make-flags obj-file)
-                       (format "make %s -C %s %s"
-                               disaster-make-flags make-root
-                               (file-relative-name obj-file make-root)))
-                   (if (string-match "\\.c[cp]p?$" file)
-                       (format "%s %s -g -c -o %s %s"
-                               disaster-cxx disaster-cxxflags
-                               obj-file file)
-                     (format "%s %s -g -c -o %s %s"
-                             disaster-cc disaster-cflags
-                             obj-file file))))
-             (dump (format "%s %s" disaster-objdump obj-file))
+             (cc (cond ((and make-root disaster-use-make)
+                        (if (equal cwd make-root)
+                            (format "make %s %s" disaster-make-flags obj-file)
+                          (format "make %s -C %s %s"
+                                  disaster-make-flags make-root
+                                  (file-relative-name obj-file make-root))))
+                       ((string-match "\\.c[cp]p?$" file)
+                        (format "%s %s -g -c -o %s %s"
+                                disaster-cxx disaster-cxxflags
+                                obj-file file))
+                       ((string-match "\\.f[90,95,03,08]" file)
+                        (format "%s %s -g -c -o %s %s"
+                                disaster-f95 disaster-fflags
+                                obj-file file))
+                       (t (format "%s %s -g -c -o %s %s"
+                                  disaster-cc disaster-cflags
+                                  obj-file file))))
+             (dump (format "%s -M %s %s" disaster-objdump disaster-assembly-syntax
+                           obj-file))
              (line-text (save-excursion
                           (buffer-substring-no-properties
                            (progn (beginning-of-line) (point))
@@ -184,7 +212,7 @@ is used."
                                                    (beginning-of-line)
                                                    (point)))
                                    'face 'region))
-                    (message "Couldn't find corresponding assembly line."))
+                  (message "Couldn't find corresponding assembly line."))
                 (switch-to-buffer-other-window oldbuf)))
           (with-current-buffer makebuf
             (save-excursion
