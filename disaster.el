@@ -155,23 +155,23 @@ is used."
       (let* ((cwd (file-name-directory (expand-file-name (buffer-file-name))))
              (obj-file (concat (file-name-sans-extension file) ".o"))
              (make-root (disaster-find-project-root "Makefile" file))
-             (cc (if (and make-root disaster-use-make)
-                     (if (equal cwd make-root)
-                         (format "make %s %s" disaster-make-flags obj-file)
-                       (format "make %s -C %s %s"
-                               disaster-make-flags make-root
-                               (file-relative-name obj-file make-root)))
-                   (cond ((string-match "\\.c[cp]p?$" file)
-                          (format "%s %s -g -c -o %s %s"
-                                  disaster-cxx disaster-cxxflags
-                                  obj-file file))
-                         ((string-match "\\.f[90,95,03,08]" file)
-                          (format "%s %s -g -c -o %s %s"
-                                  disaster-f95 disaster-fflags
-                                  obj-file file))
-                         (t (format "%s %s -g -c -o %s %s"
-                                    disaster-cc disaster-cflags
-                                    obj-file file)))))
+             (cc (cond ((and make-root disaster-use-make)
+                        (if (equal cwd make-root)
+                            (format "make %s %s" disaster-make-flags obj-file)
+                          (format "make %s -C %s %s"
+                                  disaster-make-flags make-root
+                                  (file-relative-name obj-file make-root))))
+                       ((string-match "\\.c[cp]p?$" file)
+                        (format "%s %s -g -c -o %s %s"
+                                disaster-cxx disaster-cxxflags
+                                obj-file file))
+                       ((string-match "\\.f[90,95,03,08]" file)
+                        (format "%s %s -g -c -o %s %s"
+                                disaster-f95 disaster-fflags
+                                obj-file file))
+                       (t (format "%s %s -g -c -o %s %s"
+                                  disaster-cc disaster-cflags
+                                  obj-file file))))
              (dump (format "%s %s" disaster-objdump obj-file))
              (line-text (save-excursion
                           (buffer-substring-no-properties
