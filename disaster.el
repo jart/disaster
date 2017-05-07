@@ -140,22 +140,21 @@ is used."
              (make-root (disaster-find-project-root "Makefile" file))
              (cc (if make-root
                      (if (equal cwd make-root)
-                         (format "make %s %s" disaster-make-flags obj-file)
+                         (format "make %s %s" disaster-make-flags (shell-quote-argument obj-file))
                        (format "make %s -C %s %s"
                                disaster-make-flags make-root
                                (file-relative-name obj-file make-root)))
                    (if (string-match "\\.c[cp]p?$" file)
                        (format "%s %s -g -c -o %s %s"
                                disaster-cxx disaster-cxxflags
-                               obj-file file)
+                               (shell-quote-argument obj-file) (shell-quote-argument file))
                      (format "%s %s -g -c -o %s %s"
                              disaster-cc disaster-cflags
-                             obj-file file))))
-             (dump (format "%s %s" disaster-objdump obj-file))
-             (line-text (save-excursion
-                          (buffer-substring-no-properties
-                           (progn (beginning-of-line) (point))
-                           (progn (end-of-line) (point))))))
+                             (shell-quote-argument obj-file) (shell-quote-argument file)))))
+             (dump (format "%s %s" disaster-objdump (shell-quote-argument obj-file)))
+             (line-text (buffer-substring-no-properties
+                         (point-at-bol)
+                         (point-at-eol))))
         (if (and (eq 0 (progn
                          (message (format "Running: %s" cc))
                          (shell-command cc makebuf)))
@@ -176,13 +175,8 @@ is used."
                         (search-forward file-line nil t))
                     (progn
                       (recenter)
-                      (overlay-put (make-overlay (save-excursion
-                                                   (beginning-of-line)
-                                                   (point))
-                                                 (save-excursion
-                                                   (forward-line)
-                                                   (beginning-of-line)
-                                                   (point)))
+                      (overlay-put (make-overlay (point-at-bol)
+                                                 (1+ (point-at-eol)))
                                    'face 'region))
                     (message "Couldn't find corresponding assembly line."))
                 (switch-to-buffer-other-window oldbuf)))
