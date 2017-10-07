@@ -137,7 +137,6 @@ is used."
   (save-buffer)
   (let* ((file (or file (file-name-nondirectory (buffer-file-name))))
          (line (or line (line-number-at-pos)))
-         (file-line (format "%s:%d" file line))
          (makebuf (get-buffer-create disaster-buffer-compiler))
          (asmbuf (get-buffer-create disaster-buffer-assembly)))
     (if (not (string-match "\\.c[cp]?p?$" file))
@@ -165,6 +164,7 @@ is used."
                              (shell-quote-argument obj-file) (shell-quote-argument file)))))
              (dump (format "%s %s" disaster-objdump
 			   (shell-quote-argument (concat make-root rel-obj))))
+	     (file-line (format "%s:%d" rel-file line))
              (line-text (buffer-substring-no-properties
                          (point-at-bol)
                          (point-at-eol))))
@@ -184,6 +184,10 @@ is used."
               (let ((oldbuf (current-buffer)))
                 (switch-to-buffer-other-window asmbuf)
                 (goto-char 0)
+		(when proj-root
+		  (perform-replace (format "^%s" (regexp-quote proj-root))
+				   "" nil t nil)
+		  (goto-char 0))
                 (if (or (search-forward line-text nil t)
                         (search-forward file-line nil t))
                     (progn
