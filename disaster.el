@@ -137,7 +137,7 @@ is used."
         (message "Not C/C++ non-header file")
       (let* ((cwd (file-name-directory (expand-file-name (buffer-file-name))))
              (obj-file (concat (file-name-sans-extension file) ".o"))
-             (make-root (disaster-find-project-root "Makefile" file))
+             (make-root (disaster-find-project-root nil file))
              (cc (if make-root
                      (if (equal cwd make-root)
                          (format "make %s %s" disaster-make-flags (shell-quote-argument obj-file))
@@ -258,13 +258,14 @@ convenience. If LOOKS is not specified, it'll default to
                          (list looks))
                      (list (list looks)))
                  disaster-project-root-files))
-        (parents (disaster--find-parent-dirs file)))
+        (parent-dirs (disaster--find-parent-dirs file)))
     (while (and looks (null res))
-      (while (and parents (null res))
-        (setq res (if (disaster--dir-has-file
-                       (car parents) (car looks))
-                      (car parents))
-              parents (cdr parents)))
+      (let ((parents parent-dirs))
+	(while (and parents (null res))
+	  (setq res (if (disaster--dir-has-file
+			 (car parents) (car looks))
+			(car parents))
+		parents (cdr parents))))
       (setq looks (cdr looks)))
     res))
 
