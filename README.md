@@ -1,5 +1,9 @@
-disaster.el – Disassemble C/C++ code under cursor in Emacs
-==========================================================
+## disaster.el
+*Disassemble C/C++ code under cursor in Emacs*
+
+---
+[![License GPLv2](https://img.shields.io/badge/license-GPL_v2-green.svg)](http://www.gnu.org/licenses/gpl-2.0.html)
+[![MELPA](http://melpa.org/packages/disaster-badge.svg)](http://melpa.org/#/disaster)
 
 ![Screenshot](http://i.imgur.com/kMoN1m6.png)
 
@@ -11,8 +15,8 @@ It works by creating a `.o` file using make (if you have a Makefile) or the
 default system compiler. It then runs that file through objdump to generate
 the human-readable assembly.
 
-Installation
-------------
+### Installation
+
 
 Make sure to place `disaster.el` somewhere in the load-path and add the
 following lines to your `.emacs` file to enable the `C-c d` shortcut to
@@ -23,10 +27,10 @@ invoke `disaster`:
     (define-key c-mode-base-map (kbd "C-c d") 'disaster)
 
 
-Function Documentation
-----------------------
+### Function Documentation
 
-### `(disaster &optional FILE LINE)`
+
+#### `(disaster &optional FILE LINE)`
 
 Shows assembly code for current line of C/C++ file.
 
@@ -43,7 +47,7 @@ Here's the logic path it follows:
 If FILE and LINE are not specified, the current editing location
 is used.
 
-### `(disaster-find-project-root &optional LOOKS FILE)`
+#### `(disaster-find-project-root &optional LOOKS FILE)`
 
 General-purpose Heuristic to detect bottom directory of project.
 
