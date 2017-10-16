@@ -111,6 +111,13 @@
 (defvar save-place)
 
 ;;;###autoload
+(defvar disaster-find-build-root-functions nil
+  "Functions to call to get the build root directory from the project directory.
+If nil is returned, the next function will be tried.  If all
+functions return nil, the project root directory will be used as
+the build directory.")
+
+;;;###autoload
 (defun disaster (&optional file line)
   "Shows assembly code for current line of C/C++ file.
 
@@ -136,14 +143,19 @@ is used."
     (if (not (string-match "\\.c[cp]?p?$" file))
         (message "Not C/C++ non-header file")
       (let* ((cwd (file-name-directory (expand-file-name (buffer-file-name))))
-             (obj-file (concat (file-name-sans-extension file) ".o"))
-             (make-root (disaster-find-project-root nil file))
+             (proj-root (disaster-find-project-root nil file))
+	     (make-root (disaster-find-build-root proj-root))
+	     (rel-file (if proj-root
+			   (file-relative-name file proj-root)
+			 file))
+	     (rel-obj (concat (file-name-sans-extension rel-file) ".o"))
+	     (obj-file (concat make-root rel-obj))
              (cc (if make-root
                      (if (equal cwd make-root)
-                         (format "make %s %s" disaster-make-flags (shell-quote-argument obj-file))
+                         (format "make %s %s" disaster-make-flags (shell-quote-argument rel-obj))
                        (format "make %s -C %s %s"
                                disaster-make-flags make-root
-                               (file-relative-name obj-file make-root)))
+                               rel-obj))
                    (if (string-match "\\.c[cp]p?$" file)
                        (format "%s %s -g -c -o %s %s"
                                disaster-cxx disaster-cxxflags
@@ -151,7 +163,8 @@ is used."
                      (format "%s %s -g -c -o %s %s"
                              disaster-cc disaster-cflags
                              (shell-quote-argument obj-file) (shell-quote-argument file)))))
-             (dump (format "%s %s" disaster-objdump (shell-quote-argument obj-file)))
+             (dump (format "%s %s" disaster-objdump
+			   (shell-quote-argument (concat make-root rel-obj))))
              (line-text (buffer-substring-no-properties
                          (point-at-bol)
                          (point-at-eol))))
@@ -268,6 +281,17 @@ convenience. If LOOKS is not specified, it'll default to
 		parents (cdr parents))))
       (setq looks (cdr looks)))
     res))
+
+(defun disaster-find-build-root (project-root)
+  (and project-root
+       (or (let (build-root
+		 (funcs disaster-find-build-root-functions))
+	     (while (and (null build-root) funcs)
+	       (setq build-root (funcall (car funcs) project-root)
+		     funcs (cdr funcs)))
+	     (and build-root
+		  (file-name-as-directory build-root)))
+	   project-root)))
 
 (provide 'disaster)
 
