@@ -150,19 +150,17 @@ is used."
 			 file))
 	     (rel-obj (concat (file-name-sans-extension rel-file) ".o"))
 	     (obj-file (concat make-root rel-obj))
-             (cc (if make-root
-                     (if (equal cwd make-root)
-                         (format "make %s %s" disaster-make-flags (shell-quote-argument rel-obj))
-                       (format "make %s -C %s %s"
-                               disaster-make-flags make-root
-                               rel-obj))
-                   (if (string-match "\\.c[cp]p?$" file)
-                       (format "%s %s -g -c -o %s %s"
-                               disaster-cxx disaster-cxxflags
-                               (shell-quote-argument obj-file) (shell-quote-argument file))
-                     (format "%s %s -g -c -o %s %s"
-                             disaster-cc disaster-cflags
-                             (shell-quote-argument obj-file) (shell-quote-argument file)))))
+	     (cc (cond ((file-exists-p "Makefile")
+			(format "make %s %s" disaster-make-flags (shell-quote-argument rel-obj)))
+		       ((file-exists-p "../Makefile")
+			(format "make %s -C %s %s" disaster-make-flags make-root rel-obj))
+                       ((string-match "\\.c[cp]p?$" file)
+			(format "%s %s -g -c -o %s %s"
+				disaster-cxx disaster-cxxflags
+				(shell-quote-argument obj-file) (shell-quote-argument file)))
+		       (t (format "%s %s -g -c -o %s %s"
+				  disaster-cc disaster-cflags
+				  (shell-quote-argument obj-file) (shell-quote-argument file)))))
              (dump (format "%s %s" disaster-objdump
 			   (shell-quote-argument (concat make-root rel-obj))))
              (line-text (buffer-substring-no-properties
