@@ -188,14 +188,14 @@ is used."
          (asmbuf    (get-buffer-create disaster-buffer-assembly)))
     (if (member (file-name-extension file) disaster-c++-extensions)
         (let* ((cwd       (file-name-directory (expand-file-name (buffer-file-name)))) ;; path to current source file
-               (proj-root (disaster-find-project-root nil file))                       ;; path to project root
-               (make-root (disaster-find-build-root proj-root))                        ;; path to build root
-               (rel-file  (if proj-root                                                ;; path to source file (relative to project root)
+               (proj-root (disaster-find-project-root nil file)) ;; path to project root
+               (use-cmake (file-exists-p (concat proj-root "/compile_commands.json")))
+               (make-root (disaster-find-build-root use-cmake proj-root)) ;; path to build root
+               (rel-file  (if proj-root     ;; path to source file (relative to project root)
                               (file-relative-name file proj-root)
                             file))
-               (rel-obj   (concat (file-name-sans-extension rel-file) ".o"))           ;; path to object file (relative to project root)
-               (obj-file  (concat make-root rel-obj))                                  ;; full path to object file (build root!)
-               (use-cmake (file-exists-p (concat make-root "/compile_commands.json")))
+               (rel-obj   (concat (file-name-sans-extension rel-file) ".o")) ;; path to object file (relative to project root)
+               (obj-file  (concat make-root rel-obj)) ;; full path to object file (build root!)
                (cc        (create-compile-command use-cmake make-root cwd rel-obj obj-file proj-root rel-file file))
                (dump      (format "%s %s" disaster-objdump
                                   (shell-quote-argument (concat make-root rel-obj))))
@@ -205,17 +205,14 @@ is used."
 
           (when use-cmake
             (setq tmp      (get-object-file-path-cmake cc)
-                  obj-file (concat make-root tmp)
+                  obj-file (concat make-root "/" tmp)
                   cc       (concat "cmake --build " make-root " --target " tmp)
                   dump     (format "%s %s" disaster-objdump
-                                (shell-quote-argument obj-file))))
+                                   (shell-quote-argument obj-file))))
 
           (if (and (eq 0 (progn
                            (message (format "Running: %s" cc))
-                           (if use-cmake
-                               (let ((default-directory make-root))
-                                 (shell-command cc makebuf))
-                             (shell-command cc makebuf))))
+                           (shell-command cc makebuf)))
                    (file-exists-p obj-file))
               (when (eq 0 (progn
                             (message (format "Running: %s" dump))
@@ -328,16 +325,24 @@ convenience. If LOOKS is not specified, it'll default to
       (setq looks (cdr looks)))
     res))
 
-(defun disaster-find-build-root (project-root)
-  (and project-root
-       (or (let (build-root
-         (funcs disaster-find-build-root-functions))
-         (while (and (null build-root) funcs)
-           (setq build-root (funcall (car funcs) project-root)
-             funcs (cdr funcs)))
-         (and build-root
-          (file-name-as-directory build-root)))
-       project-root)))
+(defun disaster-find-build-root (use-cmake project-root)
+  (if use-cmake
+      (progn
+        (let* ((json-object-type 'hash-table)
+               (json-array-type 'list)
+               (json-key-type 'string)
+               (json (json-read-file (concat project-root "/compile_commands.json"))))
+          (gethash "directory" (first json))))
+
+    (and project-root
+         (or (let (build-root
+                   (funcs disaster-find-build-root-functions))
+               (while (and (null build-root) funcs)
+                 (setq build-root (funcall (car funcs) project-root)
+                       funcs (cdr funcs)))
+               (and build-root
+                    (file-name-as-directory build-root)))
+             project-root))))
 
 (provide 'disaster)
 
