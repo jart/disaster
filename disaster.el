@@ -108,6 +108,12 @@
   :group 'disaster
   :type '(repeat (repeat string)))
 
+(defcustom disaster-c++-extensions
+  (list "cc" "cpp" "cxx")
+  "List of common C++ source file extensions."
+  :group 'disaster
+  :type '(repeat string))
+
 (defvar save-place)
 
 ;;;###autoload
@@ -116,6 +122,46 @@
 If nil is returned, the next function will be tried.  If all
 functions return nil, the project root directory will be used as
 the build directory.")
+
+(defun create-compile-command-make (make-root cwd rel-obj obj-file proj-root rel-file file)
+  (if make-root
+      ;; if-then
+      (if (equal cwd make-root)
+          (format "make %s %s" disaster-make-flags (shell-quote-argument rel-obj))
+        (format "make %s -C %s %s"
+                disaster-make-flags make-root
+                rel-obj))
+    ;; if-else
+    (if (member (file-name-extension file) disaster-c++-extensions)
+        (format "%s %s -g -c -o %s %s"
+                disaster-cxx disaster-cxxflags
+                (shell-quote-argument obj-file) (shell-quote-argument file))
+      (format "%s %s -g -c -o %s %s"
+              disaster-cc disaster-cflags
+              (shell-quote-argument obj-file) (shell-quote-argument file)))))
+
+(defun create-compile-command-cmake (make-root cwd rel-obj obj-file proj-root rel-file)
+  (let* ((json-object-type 'hash-table)
+         (json-array-type 'list)
+         (json-key-type 'string)
+         (json (json-read-file (concat make-root "/compile_commands.json"))))
+    (dolist (obj json)
+      (when (string-equal (gethash "file" obj) (concat proj-root rel-file))
+        (return (gethash "command" obj))))))
+
+(defun get-object-file-path-cmake (compile-command)
+  (let* ((parts (split-string compile-command " "))
+         (break-on-next nil))
+    (dolist (part parts)
+      (if (string-equal "-o" part)
+          (setq break-on-next t)
+        (when break-on-next
+          (return part))))))
+
+(defun create-compile-command (use-cmake make-root cwd rel-obj obj-file proj-root rel-file file)
+  (if use-cmake
+      (create-compile-command-cmake make-root cwd rel-obj obj-file proj-root rel-file)
+    (create-compile-command-make make-root cwd rel-obj obj-file proj-root rel-file file)))
 
 ;;;###autoload
 (defun disaster (&optional file line)
@@ -135,70 +181,70 @@ If FILE and LINE are not specified, the current editing location
 is used."
   (interactive)
   (save-buffer)
-  (let* ((file (or file (file-name-nondirectory (buffer-file-name))))
-         (line (or line (line-number-at-pos)))
+  (let* ((file      (or file (file-name-nondirectory (buffer-file-name))))
+         (line      (or line (line-number-at-pos)))
          (file-line (format "%s:%d" file line))
-         (makebuf (get-buffer-create disaster-buffer-compiler))
-         (asmbuf (get-buffer-create disaster-buffer-assembly)))
-    (if (not (string-match "\\.c[cp]?p?$" file))
-        (message "Not C/C++ non-header file")
-      (let* ((cwd (file-name-directory (expand-file-name (buffer-file-name))))
-             (proj-root (disaster-find-project-root nil file))
-	     (make-root (disaster-find-build-root proj-root))
-	     (rel-file (if proj-root
-			   (file-relative-name file proj-root)
-			 file))
-	     (rel-obj (concat (file-name-sans-extension rel-file) ".o"))
-	     (obj-file (concat make-root rel-obj))
-             (cc (if make-root
-                     (if (equal cwd make-root)
-                         (format "make %s %s" disaster-make-flags (shell-quote-argument rel-obj))
-                       (format "make %s -C %s %s"
-                               disaster-make-flags make-root
-                               rel-obj))
-                   (if (string-match "\\.c[cp]p?$" file)
-                       (format "%s %s -g -c -o %s %s"
-                               disaster-cxx disaster-cxxflags
-                               (shell-quote-argument obj-file) (shell-quote-argument file))
-                     (format "%s %s -g -c -o %s %s"
-                             disaster-cc disaster-cflags
-                             (shell-quote-argument obj-file) (shell-quote-argument file)))))
-             (dump (format "%s %s" disaster-objdump
-			   (shell-quote-argument (concat make-root rel-obj))))
-             (line-text (buffer-substring-no-properties
-                         (point-at-bol)
-                         (point-at-eol))))
-        (if (and (eq 0 (progn
-                         (message (format "Running: %s" cc))
-                         (shell-command cc makebuf)))
-                 (file-exists-p obj-file))
-            (when (eq 0 (progn
-                          (message (format "Running: %s" dump))
-                          (shell-command dump asmbuf)))
-              (kill-buffer makebuf)
-              (with-current-buffer asmbuf
-                ;; saveplace.el will prevent us from hopping to a line.
-                (set (make-local-variable 'save-place) nil)
-                (asm-mode)
-                (disaster--shadow-non-assembly-code))
-              (let ((oldbuf (current-buffer)))
-                (switch-to-buffer-other-window asmbuf)
-                (goto-char 0)
-                (if (or (search-forward line-text nil t)
-                        (search-forward file-line nil t))
-                    (progn
-                      (recenter)
-                      (overlay-put (make-overlay (point-at-bol)
-                                                 (1+ (point-at-eol)))
-                                   'face 'region))
+         (makebuf   (get-buffer-create disaster-buffer-compiler))
+         (asmbuf    (get-buffer-create disaster-buffer-assembly)))
+    (if (member (file-name-extension file) disaster-c++-extensions)
+        (let* ((cwd       (file-name-directory (expand-file-name (buffer-file-name)))) ;; path to current source file
+               (proj-root (disaster-find-project-root nil file))                       ;; path to project root
+               (make-root (disaster-find-build-root proj-root))                        ;; path to build root
+               (rel-file  (if proj-root                                                ;; path to source file (relative to project root)
+                              (file-relative-name file proj-root)
+                            file))
+               (rel-obj   (concat (file-name-sans-extension rel-file) ".o"))           ;; path to object file (relative to project root)
+               (obj-file  (concat make-root rel-obj))                                  ;; full path to object file (build root!)
+               (use-cmake (file-exists-p (concat make-root "/compile_commands.json")))
+               (cc        (create-compile-command use-cmake make-root cwd rel-obj obj-file proj-root rel-file file))
+               (dump      (format "%s %s" disaster-objdump
+                                  (shell-quote-argument (concat make-root rel-obj))))
+               (line-text (buffer-substring-no-properties
+                           (point-at-bol)
+                           (point-at-eol))))
+
+          (when use-cmake
+            (setq tmp      (get-object-file-path-cmake cc)
+                  obj-file (concat make-root tmp)
+                  cc       (concat "cmake --build " make-root " --target " tmp)
+                  dump     (format "%s %s" disaster-objdump
+                                (shell-quote-argument obj-file))))
+
+          (if (and (eq 0 (progn
+                           (message (format "Running: %s" cc))
+                           (if use-cmake
+                               (let ((default-directory make-root))
+                                 (shell-command cc makebuf))
+                             (shell-command cc makebuf))))
+                   (file-exists-p obj-file))
+              (when (eq 0 (progn
+                            (message (format "Running: %s" dump))
+                            (shell-command dump asmbuf)))
+                (kill-buffer makebuf)
+                (with-current-buffer asmbuf
+                  ;; saveplace.el will prevent us from hopping to a line.
+                  (set (make-local-variable 'save-place) nil)
+                  (asm-mode)
+                  (disaster--shadow-non-assembly-code))
+                (let ((oldbuf (current-buffer)))
+                  (switch-to-buffer-other-window asmbuf)
+                  (goto-char 0)
+                  (if (or (search-forward line-text nil t)
+                          (search-forward file-line nil t))
+                      (progn
+                        (recenter)
+                        (overlay-put (make-overlay (point-at-bol)
+                                                   (1+ (point-at-eol)))
+                                     'face 'region))
                     (message "Couldn't find corresponding assembly line."))
-                (switch-to-buffer-other-window oldbuf)))
-          (with-current-buffer makebuf
-            (save-excursion
-              (goto-char 0)
-              (insert (concat cc "\n")))
-            (compilation-mode)
-            (display-buffer makebuf)))))))
+                  (switch-to-buffer-other-window oldbuf)))
+            (with-current-buffer makebuf
+              (save-excursion
+                (goto-char 0)
+                (insert (concat cc "\n")))
+              (compilation-mode)
+              (display-buffer makebuf))))
+      (message "Not C/C++ non-header file"))))
 
 (defun disaster--shadow-non-assembly-code ()
   "Scans current buffer, which should be in asm-mode, and uses
@@ -274,24 +320,24 @@ convenience. If LOOKS is not specified, it'll default to
         (parent-dirs (disaster--find-parent-dirs file)))
     (while (and looks (null res))
       (let ((parents parent-dirs))
-	(while (and parents (null res))
-	  (setq res (if (disaster--dir-has-file
-			 (car parents) (car looks))
-			(car parents))
-		parents (cdr parents))))
+    (while (and parents (null res))
+      (setq res (if (disaster--dir-has-file
+             (car parents) (car looks))
+            (car parents))
+        parents (cdr parents))))
       (setq looks (cdr looks)))
     res))
 
 (defun disaster-find-build-root (project-root)
   (and project-root
        (or (let (build-root
-		 (funcs disaster-find-build-root-functions))
-	     (while (and (null build-root) funcs)
-	       (setq build-root (funcall (car funcs) project-root)
-		     funcs (cdr funcs)))
-	     (and build-root
-		  (file-name-as-directory build-root)))
-	   project-root)))
+         (funcs disaster-find-build-root-functions))
+         (while (and (null build-root) funcs)
+           (setq build-root (funcall (car funcs) project-root)
+             funcs (cdr funcs)))
+         (and build-root
+          (file-name-as-directory build-root)))
+       project-root)))
 
 (provide 'disaster)
 
