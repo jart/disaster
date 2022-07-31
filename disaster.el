@@ -51,6 +51,8 @@
 
 ;;; Code:
 
+(require 'cl-lib)
+
 (defgroup disaster nil
   "Disassemble C/C++ under cursor (Works best with Clang)."
   :prefix "disaster-"
@@ -149,7 +151,7 @@ the build directory.")
          (json (json-read-file (concat make-root "/compile_commands.json"))))
     (dolist (obj json)
       (when (string-equal (gethash "file" obj) (concat proj-root rel-file))
-        (return (gethash "command" obj))))))
+        (cl-return (gethash "command" obj))))))
 
 (defun get-object-file-path-cmake (compile-command)
   (let* ((parts (split-string compile-command " "))
@@ -158,7 +160,7 @@ the build directory.")
       (if (string-equal "-o" part)
           (setq break-on-next t)
         (when break-on-next
-          (return part))))))
+          (cl-return part))))))
 
 (defun create-compile-command (use-cmake make-root cwd rel-obj obj-file proj-root rel-file file)
   (if use-cmake
