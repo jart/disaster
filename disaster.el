@@ -82,7 +82,8 @@
   :group 'disaster
   :type 'string)
 
-(defcustom disaster-objdump "objdump -d -M att -Sl --no-show-raw-insn"
+(defcustom disaster-objdump (concat (if (eq system-type 'darwin) "gobjdump" "objdump")
+                                    " -d -M att -Sl --no-show-raw-insn")
   "The command name and flags for running objdump."
   :group 'disaster
   :type 'string)
