@@ -52,7 +52,6 @@
 ;;; Code:
 
 (require 'json)
-(require 'cl-lib)
 
 (defgroup disaster nil
   "Disassemble C/C++ under cursor (Works best with Clang)."
@@ -157,19 +156,21 @@ the build directory.")
          (json-array-type 'list)
          (json-key-type 'string)
          (json (json-read-file (concat make-root "/compile_commands.json"))))
-    (dolist (obj json)
-      (when (string-equal (gethash "file" obj) (concat proj-root rel-file))
-        (cl-return (gethash "command" obj))))))
+    (catch 'compile-command
+      (dolist (obj json)
+        (when (string-equal (gethash "file" obj) (concat proj-root rel-file))
+          (throw 'compile-command (gethash "command" obj)))))))
 
 (defun disaster-get-object-file-path-cmake (compile-command)
   "Get the .o object file name from a full COMPILE-COMMAND."
   (let* ((parts (split-string compile-command " "))
          (break-on-next nil))
-    (dolist (part parts)
-      (if (string-equal "-o" part)
-          (setq break-on-next t)
-        (when break-on-next
-          (cl-return part))))))
+    (catch 'object-file
+      (dolist (part parts)
+        (if (string-equal "-o" part)
+            (setq break-on-next t)
+          (when break-on-next
+            (throw 'object-file part)))))))
 
 (defun disaster-create-compile-command (use-cmake make-root cwd rel-obj obj-file proj-root rel-file file)
   (if use-cmake
