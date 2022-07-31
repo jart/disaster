@@ -318,11 +318,11 @@ convenience. If LOOKS is not specified, it'll default to
         (parent-dirs (disaster--find-parent-dirs file)))
     (while (and looks (null res))
       (let ((parents parent-dirs))
-    (while (and parents (null res))
-      (setq res (if (disaster--dir-has-file
-             (car parents) (car looks))
-            (car parents))
-        parents (cdr parents))))
+        (while (and parents (null res))
+          (setq res (if (disaster--dir-has-file
+                         (car parents) (car looks))
+                        (car parents))
+                parents (cdr parents))))
       (setq looks (cdr looks)))
     res))
 
