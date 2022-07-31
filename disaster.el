@@ -51,6 +51,7 @@
 
 ;;; Code:
 
+(require 'json)
 (require 'cl-lib)
 
 (defgroup disaster nil
