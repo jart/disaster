@@ -64,6 +64,12 @@
   :group 'disaster
   :type 'string)
 
+(defcustom disaster-assembly-mode 'asm-mode
+  "Which mode to use to view assembly code."
+  :group 'disaster
+  :type '(choice asm-mode
+                 nasm-mode))
+
 (defcustom disaster-cc (or (getenv "CC") "cc")
   "The command for your C compiler."
   :group 'disaster
@@ -228,7 +234,8 @@ is used."
                 (with-current-buffer asmbuf
                   ;; saveplace.el will prevent us from hopping to a line.
                   (set (make-local-variable 'save-place) nil)
-                  (asm-mode)
+                  (when (fboundp disaster-assembly-mode)
+                    (funcall disaster-assembly-mode))
                   (disaster--shadow-non-assembly-code))
                 (let ((oldbuf (current-buffer)))
                   (switch-to-buffer-other-window asmbuf)
