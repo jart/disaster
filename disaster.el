@@ -92,12 +92,12 @@
   :group 'disaster
   :type 'string)
 
-(defcustom disaster-buffer-compiler "*compilation*"
+(defcustom disaster-buffer-compiler "*disaster-compilation*"
   "Buffer name to use for assembler output."
   :group 'disaster
   :type 'string)
 
-(defcustom disaster-buffer-assembly "*assembly*"
+(defcustom disaster-buffer-assembly "*disaster-assembly*"
   "Buffer name to use for objdump assembly output."
   :group 'disaster
   :type 'string)
