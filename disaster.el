@@ -128,7 +128,7 @@ If nil is returned, the next function will be tried.  If all
 functions return nil, the project root directory will be used as
 the build directory.")
 
-(defun create-compile-command-make (make-root cwd rel-obj obj-file proj-root rel-file file)
+(defun disaster-create-compile-command-make (make-root cwd rel-obj obj-file proj-root rel-file file)
   (if make-root
       ;; if-then
       (if (equal cwd make-root)
@@ -145,7 +145,7 @@ the build directory.")
               disaster-cc disaster-cflags
               (shell-quote-argument obj-file) (shell-quote-argument file)))))
 
-(defun create-compile-command-cmake (make-root cwd rel-obj obj-file proj-root rel-file)
+(defun disaster-create-compile-command-cmake (make-root cwd rel-obj obj-file proj-root rel-file)
   (let* ((json-object-type 'hash-table)
          (json-array-type 'list)
          (json-key-type 'string)
@@ -154,7 +154,7 @@ the build directory.")
       (when (string-equal (gethash "file" obj) (concat proj-root rel-file))
         (cl-return (gethash "command" obj))))))
 
-(defun get-object-file-path-cmake (compile-command)
+(defun disaster-get-object-file-path-cmake (compile-command)
   (let* ((parts (split-string compile-command " "))
          (break-on-next nil))
     (dolist (part parts)
@@ -163,10 +163,10 @@ the build directory.")
         (when break-on-next
           (cl-return part))))))
 
-(defun create-compile-command (use-cmake make-root cwd rel-obj obj-file proj-root rel-file file)
+(defun disaster-create-compile-command (use-cmake make-root cwd rel-obj obj-file proj-root rel-file file)
   (if use-cmake
-      (create-compile-command-cmake make-root cwd rel-obj obj-file proj-root rel-file)
-    (create-compile-command-make make-root cwd rel-obj obj-file proj-root rel-file file)))
+      (disaster-create-compile-command-cmake make-root cwd rel-obj obj-file proj-root rel-file)
+    (disaster-create-compile-command-make make-root cwd rel-obj obj-file proj-root rel-file file)))
 
 ;;;###autoload
 (defun disaster (&optional file line)
@@ -201,7 +201,7 @@ is used."
                             file))
                (rel-obj   (concat (file-name-sans-extension rel-file) ".o")) ;; path to object file (relative to project root)
                (obj-file  (concat make-root rel-obj)) ;; full path to object file (build root!)
-               (cc        (create-compile-command use-cmake make-root cwd rel-obj obj-file proj-root rel-file file))
+               (cc        (disaster-create-compile-command use-cmake make-root cwd rel-obj obj-file proj-root rel-file file))
                (dump      (format "%s %s" disaster-objdump
                                   (shell-quote-argument (concat make-root rel-obj))))
                (line-text (buffer-substring-no-properties
@@ -209,7 +209,7 @@ is used."
                            (point-at-eol))))
 
           (when use-cmake
-            (setq tmp      (get-object-file-path-cmake cc)
+            (setq tmp      (disaster-get-object-file-path-cmake cc)
                   obj-file (concat make-root "/" tmp)
                   cc       (concat "cmake --build " make-root " --target " tmp)
                   dump     (format "%s %s" disaster-objdump
