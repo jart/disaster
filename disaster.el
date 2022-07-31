@@ -107,9 +107,8 @@
         (list "setup.py"       ;; Python apps.
               "package.json")  ;; node.js apps.
         (list "Makefile"))     ;; Makefiles are sometimes in subdirectories.
-  "List of lists of files that may indicate software project root
-   directory. Sublist are ordered from highest to lowest
-   precedence."
+  "List of lists of files that may indicate software project root directory.
+Sublist are ordered from highest to lowest precedence."
   :group 'disaster
   :type '(repeat (repeat string)))
 
@@ -129,6 +128,7 @@ functions return nil, the project root directory will be used as
 the build directory.")
 
 (defun disaster-create-compile-command-make (make-root cwd rel-obj obj-file proj-root rel-file file)
+  "Create compile command for a Make-based project."
   (if make-root
       ;; if-then
       (if (equal cwd make-root)
@@ -146,6 +146,7 @@ the build directory.")
               (shell-quote-argument obj-file) (shell-quote-argument file)))))
 
 (defun disaster-create-compile-command-cmake (make-root cwd rel-obj obj-file proj-root rel-file)
+  "Create compile command for a CMake-based project."
   (let* ((json-object-type 'hash-table)
          (json-array-type 'list)
          (json-key-type 'string)
@@ -155,6 +156,7 @@ the build directory.")
         (cl-return (gethash "command" obj))))))
 
 (defun disaster-get-object-file-path-cmake (compile-command)
+  "Get the .o object file name from a full COMPILE-COMMAND."
   (let* ((parts (split-string compile-command " "))
          (break-on-next nil))
     (dolist (part parts)
@@ -170,7 +172,7 @@ the build directory.")
 
 ;;;###autoload
 (defun disaster (&optional file line)
-  "Shows assembly code for current line of C/C++ file.
+  "Show assembly code for current line of C/C++ file.
 
 Here's the logic path it follows:
 
