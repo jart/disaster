@@ -1,10 +1,11 @@
-;;; disaster.el --- Disassemble C/C++ code under cursor in Emacs
+;;; disaster.el --- Disassemble C/C++ code under cursor
 
 ;; Copyright (C) 2013 Justine Tunney.
 
 ;; Author: Justine Tunney <jtunney@gmail.com>
 ;; Created: 2013-03-02
 ;; Version: 0.1
+;; Package-Requires: ((emacs "25"))
 ;; Keywords: tools
 ;; URL: https://github.com/jart/disaster
 
