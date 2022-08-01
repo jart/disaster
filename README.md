@@ -1,5 +1,9 @@
-disaster.el – Disassemble C/C++ code under cursor in Emacs
-==========================================================
+<a href="https://github.com/abougouffa/disaster"><img src="https://www.gnu.org/software/emacs/images/emacs.png" alt="Emacs Logo" width="80" height="80" align="right"></a>
+## disaster.el
+*Disassemble C/C++ code under cursor*
+
+---
+[![License GPLv2](https://img.shields.io/badge/license-GPL_v2-green.svg)](http://www.gnu.org/licenses/gpl-2.0.html)
 
 ![Screenshot](http://i.imgur.com/kMoN1m6.png)
 
@@ -11,8 +15,8 @@ It works by creating a `.o` file using make (if you have a Makefile) or the
 default system compiler. It then runs that file through objdump to generate
 the human-readable assembly.
 
-Installation
-------------
+### Installation
+
 
 Make sure to place `disaster.el` somewhere in the load-path and add the
 following lines to your `.emacs` file to enable the `C-c d` shortcut to
@@ -23,19 +27,37 @@ invoke `disaster`:
     (define-key c-mode-base-map (kbd "C-c d") 'disaster)
 
 
-Function Documentation
-----------------------
+### Function Documentation
 
-### `(disaster &optional FILE LINE)`
 
-Shows assembly code for current line of C/C++ file.
+#### `(disaster-create-compile-command-make MAKE-ROOT CWD REL-OBJ OBJ-FILEPROJ-ROOT REL-FILE FILE)`
+
+Create compile command for a Make-based project.
+
+
+
+#### `(disaster-create-compile-command-cmake MAKE-ROOT CWD REL-OBJ OBJ-FILEPROJ-ROOT REL-FILE)`
+
+Create compile command for a CMake-based project.
+
+
+
+#### `(disaster-get-object-file-path-cmake COMPILE-COMMAND)`
+
+Get the .o object file name from a full COMPILE-COMMAND.
+
+
+
+#### `(disaster &optional FILE LINE)`
+
+Show assembly code for current line of C/C++ file.
 
 Here's the logic path it follows:
 
 - Is there a Makefile in this directory? Run `make bufname.o`.
 - Or is there a Makefile in a parent directory? Run `make -C .. bufname.o`.
-- Or is this a C file? Run `cc -g -O3 -c -o bufname.o bufname.c`
-- Or is this a C++ file? Run `c++ -g -O3 -c -o bufname.o bufname.c`
+- Or is this a C file? Run `cc -g -c -o bufname.o bufname.c`
+- Or is this a C++ file? Run `c++ -g -c -o bufname.o bufname.c`
 - If build failed, display errors in compile-mode.
 - Run objdump inside a new window while maintaining focus.
 - Jump to line matching current line.
@@ -43,7 +65,9 @@ Here's the logic path it follows:
 If FILE and LINE are not specified, the current editing location
 is used.
 
-### `(disaster-find-project-root &optional LOOKS FILE)`
+
+
+#### `(disaster-find-project-root &optional LOOKS FILE)`
 
 General-purpose Heuristic to detect bottom directory of project.
 
@@ -57,6 +81,8 @@ from highest precedence to lowest.  However you may specify
 LOOKS as a single string or a list of strings for your
 convenience. If LOOKS is not specified, it'll default to
 `disaster-project-root-files`.
+
+
 
 -----
 <div style="padding-top:15px;color: #d0d0d0;">
