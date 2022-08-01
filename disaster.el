@@ -5,7 +5,7 @@
 ;; Author: Justine Tunney <jtunney@gmail.com>
 ;; Created: 2013-03-02
 ;; Version: 0.1
-;; Package-Requires: ((emacs "25"))
+;; Package-Requires: ((emacs "26"))
 ;; Keywords: tools
 ;; URL: https://github.com/jart/disaster
 
@@ -52,6 +52,7 @@
 ;;; Code:
 
 (require 'json)
+(require 'vc)
 
 (defgroup disaster nil
   "Disassemble C/C++ under cursor (Works best with Clang)."
@@ -108,11 +109,11 @@
   :type 'string)
 
 (defcustom disaster-project-root-files
-  (list (list ".git/")         ;; Git directory is almost always project root.
-        (list ".projectile")   ;; Projectile.
-        (list "setup.py"       ;; Python apps.
-              "package.json")  ;; node.js apps.
-        (list "Makefile"))     ;; Makefiles are sometimes in subdirectories.
+  (list (list ".projectile")    ;; Projectile project root.
+        (list "setup.py"        ;; Python apps.
+              "package.json")   ;; node.js apps.
+        (list "CMakeLists.txt") ;; CMake files are sometimes in subdirectories.
+        (list "Makefile"))      ;; Makefiles are sometimes in subdirectories.
   "List of lists of files that may indicate software project root directory.
 Sublist are ordered from highest to lowest precedence."
   :group 'disaster
@@ -320,21 +321,24 @@ from highest precedence to lowest.  However you may specify
 LOOKS as a single string or a list of strings for your
 convenience. If LOOKS is not specified, it'll default to
 `disaster-project-root-files'."
-  (let ((res nil)
-        (looks (if looks
-                   (if (listp looks)
-                       (if (listp (car looks))
-                           looks
-                         (list looks))
-                     (list (list looks)))
-                 disaster-project-root-files))
-        (parent-dirs (disaster--find-parent-dirs file)))
+  (let* ((buffer (get-file-buffer (or file (buffer-file-name))))
+         (res (when buffer
+                (with-current-buffer buffer
+                  (when (vc-root-dir)
+                    (expand-file-name (vc-root-dir))))))
+         (looks (if looks
+                    (if (listp looks)
+                        (if (listp (car looks))
+                            looks
+                          (list looks))
+                      (list (list looks)))
+                  disaster-project-root-files))
+         (parent-dirs (disaster--find-parent-dirs file)))
     (while (and looks (null res))
       (let ((parents parent-dirs))
         (while (and parents (null res))
-          (setq res (if (disaster--dir-has-file
-                         (car parents) (car looks))
-                        (car parents))
+          (setq res (when (disaster--dir-has-file (car parents) (car looks))
+                      (car parents))
                 parents (cdr parents))))
       (setq looks (cdr looks)))
     res))
@@ -347,7 +351,6 @@ convenience. If LOOKS is not specified, it'll default to
                (json-key-type 'string)
                (json (json-read-file (concat project-root "/compile_commands.json"))))
           (gethash "directory" (car json))))
-
     (and project-root
          (or (let (build-root
                    (funcs disaster-find-build-root-functions))
