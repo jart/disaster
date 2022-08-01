@@ -1,13 +1,15 @@
 ;;; disaster.el --- Disassemble C/C++ code under cursor
 
-;; Copyright (C) 2013 Justine Tunney.
+;; Copyright (C) 2013-2017 Justine Tunney.
+;; Copyright (C) 2022 Abdelhak Bougouffa.
 
 ;; Author: Justine Tunney <jtunney@gmail.com>
+;;         Abdelhak Bougouffa <abougouffa@fedoraproject.org>
 ;; Created: 2013-03-02
-;; Version: 0.1
+;; Version: 0.2
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: tools
-;; URL: https://github.com/jart/disaster
+;; URL: https://github.com/abougouffa/disaster
 
 ;; This file is not part of GNU Emacs.
 
