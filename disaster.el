@@ -277,7 +277,7 @@ assembly code."
 For example:
 
     (disaster--find-parent-dirs \"/home/jart/disaster-disaster.el\")
-    => (\"/home/jart/disaster-\" \"/home/jart/\" \"/home/\" \"/\")
+    => (\"/home/jart/\" \"/home/\" \"/\")
 
 FILE defaults to `buffer-file-name'."
   (let ((res nil)
