@@ -123,8 +123,6 @@ Sublist are ordered from highest to lowest precedence."
   :group 'disaster
   :type '(repeat string))
 
-(defvar save-place)
-
 ;;;###autoload
 (defvar disaster-find-build-root-functions nil
   "Functions to call to get the build root directory from the project directory.
@@ -234,7 +232,7 @@ is used."
                 (kill-buffer makebuf)
                 (with-current-buffer asmbuf
                   ;; saveplace.el will prevent us from hopping to a line.
-                  (set (make-local-variable 'save-place) nil)
+                  (set (make-local-variable 'save-place-mode) nil)
                   (when (fboundp disaster-assembly-mode)
                     (funcall disaster-assembly-mode))
                   (disaster--shadow-non-assembly-code))
