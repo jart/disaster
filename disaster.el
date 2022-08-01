@@ -345,7 +345,7 @@ convenience. If LOOKS is not specified, it'll default to
                (json-array-type 'list)
                (json-key-type 'string)
                (json (json-read-file (concat project-root "/compile_commands.json"))))
-          (gethash "directory" (first json))))
+          (gethash "directory" (car json))))
 
     (and project-root
          (or (let (build-root
