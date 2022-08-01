@@ -109,6 +109,7 @@
 
 (defcustom disaster-project-root-files
   (list (list ".git/")         ;; Git directory is almost always project root.
+        (list ".projectile")   ;; Projectile.
         (list "setup.py"       ;; Python apps.
               "package.json")  ;; node.js apps.
         (list "Makefile"))     ;; Makefiles are sometimes in subdirectories.
