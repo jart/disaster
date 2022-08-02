@@ -101,8 +101,7 @@
 (defcustom disaster-assembly-mode 'asm-mode
   "Which mode to use to view assembly code."
   :group 'disaster
-  :type '(choice asm-mode
-                 nasm-mode))
+  :type '(choice asm-mode nasm-mode))
 
 (defcustom disaster-cc (or (getenv "CC") "cc")
   "The command for your C compiler."
@@ -139,8 +138,9 @@
   :group 'disaster
   :type 'string)
 
-(defcustom disaster-objdump (concat (if (eq system-type 'darwin) "gobjdump" "objdump")
-                                    " -d -M att -Sl --no-show-raw-insn")
+(defcustom disaster-objdump
+  (concat (if (eq system-type 'darwin) "gobjdump" "objdump")
+          " -d -M att -Sl --no-show-raw-insn")
   "The command name and flags for running objdump."
   :group 'disaster
   :type 'string)
@@ -165,7 +165,6 @@
 Sublist are ordered from highest to lowest precedence."
   :group 'disaster
   :type '(repeat (repeat string)))
-
 
 (defcustom disaster-c-regexp "\\.c$"
   "Regexp for C source files."
