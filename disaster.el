@@ -1,4 +1,4 @@
-;;; disaster.el --- Disassemble C/C++ code under cursor -*- lexical-binding: t; -*-
+;;; disaster.el --- Disassemble C, C++ or Fortran code under cursor -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2013-2017 Justine Tunney.
 ;; Copyright (C) 2022 Abdelhak Bougouffa.
@@ -6,9 +6,9 @@
 ;; Author: Justine Tunney <jtunney@gmail.com>
 ;;         Abdelhak Bougouffa <abougouffa@fedoraproject.org>
 ;; Created: 2013-03-02
-;; Version: 0.3
-;; Package-Requires: ((emacs "26"))
-;; Keywords: tools
+;; Version: 1.0
+;; Package-Requires: ((emacs "27"))
+;; Keywords: tools c
 ;; URL: https://github.com/abougouffa/disaster
 
 ;; This file is not part of GNU Emacs.
@@ -35,28 +35,29 @@
 ;; ![Screenshot of a Fortran example](screenshot-fortran.png)
 ;;
 ;; Disaster lets you press `C-c d` to see the compiled assembly code for the
-;; C/C++ file you're currently editing. It even jumps to and highlights the
-;; line of assembly corresponding to the line beneath your cursor.
+;; C, C++ or Fortran file you're currently editing. It even jumps to and
+;; highlights the line of assembly corresponding to the line beneath your cursor.
 ;;
 ;; It works by creating a `.o` file using `make` (if you have a Makefile), or
-;; `cmake` (if you have a `compile_commands.json` file, the compilation command
-;; and flags will be read from it) or the default system compiler. It then runs
-;; that file through `objdump` to generate the human-readable assembly.
+;; `cmake` (if you have a `compile_commands.json` file) or the default system
+;; compiler. It then runs that file through `objdump` to generate the
+;; human-readable assembly.
 ;;
 ;; This repo is a fork of [jart/disaster](https://github.com/jart/disaster)
-;; which seems unmaintainded since 2017. We merged some useful PRs opened on
-;; the original repo, and ported it to Emacs 27+.
+;; which seems unmaintainded since 2017. I merged some useful PRs opened on
+;; the original repo, rewritten some parts and ported it to Emacs 27+.
 
 ;;; Installation:
 
-;; Make sure to place `disaster.el` somewhere in the load-path and add the
-;; following lines to your `.emacs` file to enable the `C-c d` shortcut to
-;; invoke `disaster':
+;; Make sure to place `disaster.el` somewhere in the `load-path`, then you should
+;; be able to run `M-x disaster`. If you want, you add the following lines to
+;; your `.emacs` file to register the `C-c d` shortcut for invoking `disaster`:
 ;;
 ;; ```elisp
 ;; (add-to-list 'load-path "/PATH/TO/DISASTER")
 ;; (require 'disaster)
 ;; (define-key c-mode-base-map (kbd "C-c d") 'disaster)
+;; (define-key fortran-mode-map (kbd "C-c d") 'disaster)
 ;; ```
 
 ;; #### Doom Emacs
@@ -75,11 +76,11 @@
 ;; (use-package! disaster
 ;;   :commands (disaster)
 ;;   :init
-;;   ;; If you want to view assembly code in `nasm-mode` instead of `asm-mode`
+;;   ;; If you prefer viewing assembly code in `nasm-mode` instead of `asm-mode`
 ;;   (setq disaster-assembly-mode 'nasm-mode)
 ;;
 ;;   (map! :localleader
-;;         :map (c++-mode-map c-mode-map)))
+;;         :map (c++-mode-map c-mode-map fortran-mode-map)))
 ;;         :desc "Disaster" "d" #'disaster))
 ;; ```
 
