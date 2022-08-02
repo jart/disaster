@@ -6,7 +6,7 @@
 ;; Author: Justine Tunney <jtunney@gmail.com>
 ;;         Abdelhak Bougouffa <abougouffa@fedoraproject.org>
 ;; Created: 2013-03-02
-;; Version: 0.2
+;; Version: 0.3
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: tools
 ;; URL: https://github.com/abougouffa/disaster
