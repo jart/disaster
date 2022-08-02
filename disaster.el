@@ -189,7 +189,12 @@ functions return nil, the project root directory will be used as
 the build directory.")
 
 (defun disaster-create-compile-command-make (make-root cwd rel-obj obj-file proj-root rel-file file)
-  "Create compile command for a Make-based project."
+  "Create compile command for a Make-based project.
+MAKE-ROOT: path to build root,
+CWD: path to current source file,
+REL-OBJ: path to object file (relative to project root),
+OBJ-FILE: full path to object file (build root!)
+PROJ-ROOT: path to project root, REL-FILE FILE."
   (if make-root
       ;; if-then
       (if (equal cwd make-root)
@@ -213,7 +218,12 @@ the build directory.")
           (t (warn "File %s do not seems to be a C, C++ or Fortran file." file)))))
 
 (defun disaster-create-compile-command-cmake (make-root cwd rel-obj obj-file proj-root rel-file)
-  "Create compile command for a CMake-based project."
+  "Create compile command for a CMake-based project.
+MAKE-ROOT: path to build root,
+CWD: path to current source file,
+REL-OBJ: path to object file (relative to project root),
+OBJ-FILE: full path to object file (build root!)
+PROJ-ROOT: path to project root, REL-FILE FILE."
   (let* ((json-object-type 'hash-table)
          (json-array-type 'list)
          (json-key-type 'string)
@@ -235,6 +245,13 @@ the build directory.")
             (throw 'object-file part)))))))
 
 (defun disaster-create-compile-command (use-cmake make-root cwd rel-obj obj-file proj-root rel-file file)
+  "Create the actual compile command.
+USE-CMAKE: non NIL to use CMake, NIL to use Make or default compiler options,
+MAKE-ROOT: path to build root,
+CWD: path to current source file,
+REL-OBJ: path to object file (relative to project root),
+OBJ-FILE: full path to object file (build root!)
+PROJ-ROOT: path to project root, REL-FILE FILE."
   (if use-cmake
       (disaster-create-compile-command-cmake make-root cwd rel-obj obj-file proj-root rel-file)
     (disaster-create-compile-command-make make-root cwd rel-obj obj-file proj-root rel-file file)))
@@ -327,8 +344,8 @@ is used."
       (message "Not a C, C++ or Fortran source file"))))
 
 (defun disaster--shadow-non-assembly-code ()
-  "Scans current buffer, which should be in asm-mode, and uses
-the standard `shadow' face for lines that don't appear to contain
+  "Scans current buffer, which should be in `asm-mode'.
+Uses the standard `shadow' face for lines that don't appear to contain
 assembly code."
   (remove-overlays)
   (save-excursion
@@ -342,14 +359,14 @@ assembly code."
       (forward-line))))
 
 (defun disaster--find-parent-dirs (&optional file)
-  "Returns a list of parent directories with trailing slashes.
+  "Return a list of parent directories with trailing slashes.
 
 For example:
 
     (disaster--find-parent-dirs \"/home/jart/disaster-disaster.el\")
     => (\"/home/jart/\" \"/home/\" \"/\")
 
-FILE defaults to `buffer-file-name'."
+FILE default to `w/function buffer-file-name'."
   (let ((res nil)
         (dir (file-name-directory
               (expand-file-name (or file (buffer-file-name))))))
@@ -360,7 +377,7 @@ FILE defaults to `buffer-file-name'."
     (reverse res)))
 
 (defun disaster--dir-has-file (dir file)
-  "Returns t if DIR contains FILE (or any file if FILE is a list).
+  "Return t if DIR contain FILE (or any file if FILE is a list).
 
 For example:
 
@@ -414,6 +431,9 @@ convenience. If LOOKS is not specified, it'll default to
     res))
 
 (defun disaster-find-build-root (use-cmake project-root)
+  "Find the root of build directory.
+USE-CMAKE: non nil to use CMake's compile_commands.json,
+PROJECT-ROOT: root directory of the project."
   (if use-cmake
       (progn
         (let* ((json-object-type 'hash-table)
