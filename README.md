@@ -11,9 +11,13 @@ Disaster lets you press `C-c d` to see the compiled assembly code for the
 C/C++ file you're currently editing. It even jumps to and highlights the
 line of assembly corresponding to the line beneath your cursor.
 
-It works by creating a `.o` file using make (if you have a Makefile) or the
-default system compiler. It then runs that file through objdump to generate
-the human-readable assembly.
+It works by creating a `.o` file using make (if you have a Makefile, or
+`compile_commands.json`) or the default system compiler. It then runs that
+file through `objdump` to generate the human-readable assembly.
+
+This repo is a fork of [jart/disaster](https://github.com/jart/disaster)
+which seems unmaintainded since 2017. We merged some useful PRs opened on
+the original repo, and ported it to Emacs 27+.
 
 ### Installation
 
@@ -54,6 +58,8 @@ Show assembly code for current line of C/C++ file.
 
 Here's the logic path it follows:
 
+- Is there a complile_commands.json in this directory? Get the object file
+  name for the current file, and run it associated command.
 - Is there a Makefile in this directory? Run `make bufname.o`.
 - Or is there a Makefile in a parent directory? Run `make -C .. bufname.o`.
 - Or is this a C file? Run `cc -g -c -o bufname.o bufname.c`
@@ -71,9 +77,11 @@ is used.
 
 General-purpose Heuristic to detect bottom directory of project.
 
-This works by scanning parent directories of FILE (using
-`disaster--find-parent-dirs`) for certain types of files like a
-`.git/` directory or a `Makefile` (which is less preferred).
+First, this will try to use `(vc-root-dir)` to guess the project
+root directory, and falls back to manual check wich works by scanning
+parent directories of FILE (using `disaster--find-parent-dirs`) for certain
+types of files like a `.projectile` file or a `Makefile` (which is less
+preferred).
 
 The canonical structure of LOOKS is a list of lists of files
 to look for in each parent directory where sublists are ordered
