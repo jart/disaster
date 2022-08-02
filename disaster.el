@@ -112,6 +112,12 @@
   :group 'disaster
   :type 'string)
 
+
+(defcustom disaster-fortran (or (getenv "FORTRAN") "gfortran")
+  "The command for your Fortran compiler."
+  :group 'disaster
+  :type 'string)
+
 (defcustom disaster-cflags (or (getenv "CFLAGS")
                                "-march=native")
   "Command line options to use when compiling C."
@@ -121,6 +127,13 @@
 (defcustom disaster-cxxflags (or (getenv "CXXFLAGS")
                                  "-march=native")
   "Command line options to use when compiling C++.!"
+  :group 'disaster
+  :type 'string)
+
+
+(defcustom disaster-fortranflags (or (getenv "FORTRANFLAGS")
+                                     "-march=native")
+  "Command line options to use when compiling Fortran."
   :group 'disaster
   :type 'string)
 
@@ -151,11 +164,21 @@ Sublist are ordered from highest to lowest precedence."
   :group 'disaster
   :type '(repeat (repeat string)))
 
-(defcustom disaster-c++-extensions
-  (list "cc" "cpp" "cxx")
-  "List of common C++ source file extensions."
+
+(defcustom disaster-c-regexp "\\.c$"
+  "Regexp for C source files."
   :group 'disaster
-  :type '(repeat string))
+  :type 'regexp)
+
+(defcustom disaster-cpp-regexp "\\.c\\(c\\|pp\\|xx\\)$"
+  "Regexp for C++ source files."
+  :group 'disaster
+  :type 'regexp)
+
+(defcustom disaster-fortran-regexp "\\.f\\(or\\|90\\|95\\|0[38]\\)?$"
+  "Regexp for Fortran source files."
+  :group 'disaster
+  :type 'regexp)
 
 ;;;###autoload
 (defvar disaster-find-build-root-functions nil
@@ -174,13 +197,19 @@ the build directory.")
                 disaster-make-flags make-root
                 rel-obj))
     ;; if-else
-    (if (member (file-name-extension file) disaster-c++-extensions)
-        (format "%s %s -g -c -o %s %s"
-                disaster-cxx disaster-cxxflags
-                (shell-quote-argument obj-file) (shell-quote-argument file))
-      (format "%s %s -g -c -o %s %s"
-              disaster-cc disaster-cflags
-              (shell-quote-argument obj-file) (shell-quote-argument file)))))
+    (cond ((string-match-p disaster-cpp-regexp file)
+           (format "%s %s -g -c -o %s %s"
+                   disaster-cxx disaster-cxxflags
+                   (shell-quote-argument obj-file) (shell-quote-argument file)))
+          ((string-match-p disaster-c-regexp file)
+           (format "%s %s -g -c -o %s %s"
+                   disaster-cc disaster-cflags
+                   (shell-quote-argument obj-file) (shell-quote-argument file)))
+          ((string-match-p disaster-fortran-regexp file)
+           (format "%s %s -g -c -o %s %s"
+                   disaster-fortran disaster-fortranflags
+                   (shell-quote-argument obj-file) (shell-quote-argument file)))
+          (t (warn "File %s do not seems to be a C, C++ or Fortran file." file)))))
 
 (defun disaster-create-compile-command-cmake (make-root cwd rel-obj obj-file proj-root rel-file)
   "Create compile command for a CMake-based project."
@@ -234,12 +263,14 @@ is used."
          (file-line (format "%s:%d" file line))
          (makebuf   (get-buffer-create disaster-buffer-compiler))
          (asmbuf    (get-buffer-create disaster-buffer-assembly)))
-    (if (member (file-name-extension file) disaster-c++-extensions)
+    (if (or (string-match-p disaster-c-regexp file)
+            (string-match-p disaster-cpp-regexp file)
+            (string-match-p disaster-fortran-regexp file))
         (let* ((cwd       (file-name-directory (expand-file-name (buffer-file-name)))) ;; path to current source file
                (proj-root (disaster-find-project-root nil file)) ;; path to project root
                (use-cmake (file-exists-p (concat proj-root "/compile_commands.json")))
                (make-root (disaster-find-build-root use-cmake proj-root)) ;; path to build root
-               (rel-file  (if proj-root     ;; path to source file (relative to project root)
+               (rel-file  (if proj-root ;; path to source file (relative to project root)
                               (file-relative-name file proj-root)
                             file))
                (rel-obj   (concat (file-name-sans-extension rel-file) ".o")) ;; path to object file (relative to project root)
@@ -251,6 +282,7 @@ is used."
                            (point-at-bol)
                            (point-at-eol))))
 
+          ;; For CMake, read the object file from compile_commands.json
           (when use-cmake
             (setq tmp      (disaster-get-object-file-path-cmake cc)
                   obj-file (concat make-root "/" tmp)
@@ -269,6 +301,7 @@ is used."
                 (with-current-buffer asmbuf
                   ;; saveplace.el will prevent us from hopping to a line.
                   (set (make-local-variable 'save-place-mode) nil)
+                  ;; Call the configured mode `asm-mode' or `nasm-mode'
                   (when (fboundp disaster-assembly-mode)
                     (funcall disaster-assembly-mode))
                   (disaster--shadow-non-assembly-code))
@@ -290,7 +323,7 @@ is used."
                 (insert (concat cc "\n")))
               (compilation-mode)
               (display-buffer makebuf))))
-      (message "Not C/C++ non-header file"))))
+      (message "Not a C, C++ or Fortran source file"))))
 
 (defun disaster--shadow-non-assembly-code ()
   "Scans current buffer, which should be in asm-mode, and uses
