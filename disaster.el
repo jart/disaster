@@ -232,9 +232,9 @@ PROJ-ROOT: path to project root, REL-FILE FILE."
         (when (string-equal (gethash "file" obj) (concat proj-root rel-file))
           (throw 'compile-command (gethash "command" obj)))))))
 
-(defun disaster-get-object-file-path-cmake (compile-command)
-  "Get the .o object file name from a full COMPILE-COMMAND."
-  (let* ((parts (split-string compile-command " "))
+(defun disaster-get-object-file-path-cmake (compile-cmd)
+  "Get the .o object file name from a full COMPILE-CMD."
+  (let* ((parts (split-string compile-cmd " "))
          (break-on-next nil))
     (catch 'object-file
       (dolist (part parts)
