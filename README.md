@@ -1,6 +1,6 @@
 <a href="https://github.com/abougouffa/disaster"><img src="https://www.gnu.org/software/emacs/images/emacs.png" alt="Emacs Logo" width="80" height="80" align="right"></a>
 ## disaster.el
-*Disassemble C/C++ code under cursor*
+*Disassemble C, C++ or Fortran code under cursor*
 
 ---
 [![License GPLv2](https://img.shields.io/badge/license-GPL_v2-green.svg)](http://www.gnu.org/licenses/gpl-2.0.html)
@@ -10,29 +10,30 @@
 ![Screenshot of a Fortran example](screenshot-fortran.png)
 
 Disaster lets you press `C-c d` to see the compiled assembly code for the
-C/C++ file you're currently editing. It even jumps to and highlights the
-line of assembly corresponding to the line beneath your cursor.
+C, C++ or Fortran file you're currently editing. It even jumps to and
+highlights the line of assembly corresponding to the line beneath your cursor.
 
 It works by creating a `.o` file using `make` (if you have a Makefile), or
-`cmake` (if you have a `compile_commands.json` file, the compilation command
-and flags will be read from it) or the default system compiler. It then runs
-that file through `objdump` to generate the human-readable assembly.
+`cmake` (if you have a `compile_commands.json` file) or the default system
+compiler. It then runs that file through `objdump` to generate the
+human-readable assembly.
 
 This repo is a fork of [jart/disaster](https://github.com/jart/disaster)
-which seems unmaintainded since 2017. We merged some useful PRs opened on
-the original repo, and ported it to Emacs 27+.
+which seems unmaintainded since 2017. I merged some useful PRs opened on
+the original repo, rewritten some parts and ported it to Emacs 27+.
 
 ### Installation
 
 
-Make sure to place `disaster.el` somewhere in the load-path and add the
-following lines to your `.emacs` file to enable the `C-c d` shortcut to
-invoke `disaster`:
+Make sure to place `disaster.el` somewhere in the `load-path`, then you should
+be able to run `M-x disaster`. If you want, you add the following lines to
+your `.emacs` file to register the `C-c d` shortcut for invoking `disaster`:
 
 ```elisp
 (add-to-list 'load-path "/PATH/TO/DISASTER")
 (require 'disaster)
 (define-key c-mode-base-map (kbd "C-c d") 'disaster)
+(define-key fortran-mode-map (kbd "C-c d") 'disaster)
 ```
 
 #### Doom Emacs
@@ -51,11 +52,11 @@ And this to your `config.el`:
 (use-package! disaster
   :commands (disaster)
   :init
-  ;; If you want to view assembly code in `nasm-mode` instead of `asm-mode`
+  ;; If you prefer viewing assembly code in `nasm-mode` instead of `asm-mode`
   (setq disaster-assembly-mode 'nasm-mode)
 
   (map! :localleader
-        :map (c++-mode-map c-mode-map)))
+        :map (c++-mode-map c-mode-map fortran-mode-map)))
         :desc "Disaster" "d" #'disaster))
 ```
 
@@ -65,18 +66,40 @@ And this to your `config.el`:
 #### `(disaster-create-compile-command-make MAKE-ROOT CWD REL-OBJ OBJ-FILEPROJ-ROOT REL-FILE FILE)`
 
 Create compile command for a Make-based project.
+MAKE-ROOT: path to build root,
+CWD: path to current source file,
+REL-OBJ: path to object file (relative to project root),
+OBJ-FILE: full path to object file (build root!)
+PROJ-ROOT: path to project root, REL-FILE FILE.
 
 
 
 #### `(disaster-create-compile-command-cmake MAKE-ROOT CWD REL-OBJ OBJ-FILEPROJ-ROOT REL-FILE)`
 
 Create compile command for a CMake-based project.
+MAKE-ROOT: path to build root,
+CWD: path to current source file,
+REL-OBJ: path to object file (relative to project root),
+OBJ-FILE: full path to object file (build root!)
+PROJ-ROOT: path to project root, REL-FILE FILE.
 
 
 
-#### `(disaster-get-object-file-path-cmake COMPILE-COMMAND)`
+#### `(disaster-get-object-file-path-cmake COMPILE-CMD)`
 
-Get the .o object file name from a full COMPILE-COMMAND.
+Get the .o object file name from a full COMPILE-CMD.
+
+
+
+#### `(disaster-create-compile-command USE-CMAKE MAKE-ROOT CWD REL-OBJOBJ-FILE PROJ-ROOT REL-FILE FILE)`
+
+Create the actual compile command.
+USE-CMAKE: non NIL to use CMake, NIL to use Make or default compiler options,
+MAKE-ROOT: path to build root,
+CWD: path to current source file,
+REL-OBJ: path to object file (relative to project root),
+OBJ-FILE: full path to object file (build root!)
+PROJ-ROOT: path to project root, REL-FILE FILE.
 
 
 
@@ -117,6 +140,14 @@ from highest precedence to lowest.  However you may specify
 LOOKS as a single string or a list of strings for your
 convenience. If LOOKS is not specified, it'll default to
 `disaster-project-root-files`.
+
+
+
+#### `(disaster-find-build-root USE-CMAKE PROJECT-ROOT)`
+
+Find the root of build directory.
+USE-CMAKE: non nil to use CMake's compile_commands.json,
+PROJECT-ROOT: root directory of the project.
 
 
 
