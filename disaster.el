@@ -36,9 +36,10 @@
 ;; C/C++ file you're currently editing. It even jumps to and highlights the
 ;; line of assembly corresponding to the line beneath your cursor.
 ;;
-;; It works by creating a `.o` file using make (if you have a Makefile, or
-;; `compile_commands.json`) or the default system compiler. It then runs that
-;; file through `objdump` to generate the human-readable assembly.
+;; It works by creating a `.o` file using `make` (if you have a Makefile), or
+;; `cmake` (if you have a `compile_commands.json` file, the compilation command
+;; and flags will be read from it) or the default system compiler. It then runs
+;; that file through `objdump` to generate the human-readable assembly.
 ;;
 ;; This repo is a fork of [jart/disaster](https://github.com/jart/disaster)
 ;; which seems unmaintainded since 2017. We merged some useful PRs opened on
@@ -54,6 +55,30 @@
 ;; (add-to-list 'load-path "/PATH/TO/DISASTER")
 ;; (require 'disaster)
 ;; (define-key c-mode-base-map (kbd "C-c d") 'disaster)
+;; ```
+
+;; #### Doom Emacs
+
+;; For Doom Emacs users, you can add this snippet to your `packages.el`.
+;;
+;; ```elisp
+;; (package! disaster
+;;   :recipe (:host github))
+;;            :repo "abougouffa/disaster"))
+;; ```
+;;
+;; And this to your `config.el`:
+;;
+;; ```elisp
+;; (use-package! disaster
+;;   :commands (disaster)
+;;   :init
+;;   ;; If you want to view assembly code in `nasm-mode` instead of `asm-mode`
+;;   (setq disaster-assembly-mode 'nasm-mode)
+;;
+;;   (map! :localleader
+;;         :map (c++-mode-map c-mode-map)))
+;;         :desc "Disaster" "d" #'disaster))
 ;; ```
 
 ;;; Code:
