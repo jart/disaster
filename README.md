@@ -26,10 +26,11 @@ Make sure to place `disaster.el` somewhere in the load-path and add the
 following lines to your `.emacs` file to enable the `C-c d` shortcut to
 invoke `disaster`:
 
-    (add-to-list 'load-path "/PATH/TO/DISASTER")
-    (require 'disaster)
-    (define-key c-mode-base-map (kbd "C-c d") 'disaster)
-
+```elisp
+(add-to-list 'load-path "/PATH/TO/DISASTER")
+(require 'disaster)
+(define-key c-mode-base-map (kbd "C-c d") 'disaster)
+```
 
 ### Function Documentation
 
