@@ -30,7 +30,9 @@
 
 ;;; Commentary:
 
-;; ![Screenshot](http://i.imgur.com/kMoN1m6.png)
+;; ![Screenshot of a C example](screenshot-c.png)
+;;
+;; ![Screenshot of a Fortran example](screenshot-fortran.png)
 ;;
 ;; Disaster lets you press `C-c d` to see the compiled assembly code for the
 ;; C/C++ file you're currently editing. It even jumps to and highlights the
