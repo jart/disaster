@@ -197,11 +197,10 @@ OBJ-FILE: full path to object file (build root!)
 PROJ-ROOT: path to project root, REL-FILE FILE."
   (if make-root
       ;; if-then
-      (if (equal cwd make-root)
-          (format "make %s %s" disaster-make-flags (shell-quote-argument rel-obj))
-        (format "make %s -C %s %s"
-                disaster-make-flags make-root
-                rel-obj))
+      (cond ((equal cwd make-root)
+             (format "make %s %s" disaster-make-flags (shell-quote-argument rel-obj)))
+            (t (format "make %s -C %s %s"
+                       disaster-make-flags make-root rel-obj)))
     ;; if-else
     (cond ((string-match-p disaster-cpp-regexp file)
            (format "%s %s -g -c -o %s %s"
