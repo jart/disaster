@@ -301,11 +301,11 @@ is used."
 
           ;; For CMake, read the object file from compile_commands.json
           (when use-cmake
-            (setq tmp      (disaster-get-object-file-path-cmake cc)
-                  obj-file (concat make-root "/" tmp)
-                  cc       (concat "cmake --build " make-root " --target " tmp)
-                  dump     (format "%s %s" disaster-objdump
-                                   (shell-quote-argument obj-file))))
+            (let ((tmp (disaster-get-object-file-path-cmake cc)))
+              (setq obj-file (format "%s/%s" make-root tmp)
+                    cc       (format "cmake --build %s --target %s" make-root tmp)
+                    dump     (format "%s %s" disaster-objdump
+                                     (shell-quote-argument obj-file)))))
 
           (if (and (eq 0 (progn
                            (message (format "Running: %s" cc))
