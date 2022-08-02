@@ -1,4 +1,4 @@
-;;; disaster.el --- Disassemble C/C++ code under cursor
+;;; disaster.el --- Disassemble C/C++ code under cursor -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2013-2017 Justine Tunney.
 ;; Copyright (C) 2022 Abdelhak Bougouffa.
