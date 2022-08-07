@@ -4,6 +4,7 @@
 
 ;; Author: Justine Tunney <jtunney@gmail.com>
 ;;         Abdelhak Bougouffa <abougouffa@fedoraproject.org>
+;; Maintainer: Abdelhak Bougouffa <abougouffa@fedoraproject.org>
 ;; Created: 2013-03-02
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "27"))
