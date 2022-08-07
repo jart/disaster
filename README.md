@@ -1,9 +1,10 @@
-<a href="https://github.com/abougouffa/disaster"><img src="https://www.gnu.org/software/emacs/images/emacs.png" alt="Emacs Logo" width="80" height="80" align="right"></a>
+<a href="https://github.com/jart/disaster"><img src="https://www.gnu.org/software/emacs/images/emacs.png" alt="Emacs Logo" width="80" height="80" align="right"></a>
 ## disaster.el
 *Disassemble C, C++ or Fortran code under cursor*
 
 ---
 [![License GPLv2](https://img.shields.io/badge/license-GPL_v2-green.svg)](http://www.gnu.org/licenses/gpl-2.0.html)
+[![MELPA](http://melpa.org/packages/disaster-badge.svg)](http://melpa.org/#/disaster)
 
 ![Screenshot of a C example](screenshot-c.png)
 
@@ -18,10 +19,6 @@ It works by creating a `.o` file using `make` (if you have a Makefile), or
 compiler. It then runs that file through `objdump` to generate the
 human-readable assembly.
 
-This repo is a fork of [jart/disaster](https://github.com/jart/disaster)
-which seems unmaintainded since 2017. I merged some useful PRs opened on
-the original repo, rewritten some parts and ported it to Emacs 27+.
-
 ### Installation
 
 
@@ -32,7 +29,7 @@ your `.emacs` file to register the `C-c d` shortcut for invoking `disaster`:
 ```elisp
 (add-to-list 'load-path "/PATH/TO/DISASTER")
 (require 'disaster)
-(define-key c-mode-base-map (kbd "C-c d") 'disaster)
+(define-key c-mode-map (kbd "C-c d") 'disaster)
 (define-key fortran-mode-map (kbd "C-c d") 'disaster)
 ```
 
@@ -43,7 +40,7 @@ For Doom Emacs users, you can add this snippet to your `packages.el`.
 ```elisp
 (package! disaster
   :recipe (:host github))
-           :repo "abougouffa/disaster"))
+           :repo "jart/disaster"))
 ```
 
 And this to your `config.el`:

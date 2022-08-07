@@ -1,7 +1,6 @@
 ;;; disaster.el --- Disassemble C, C++ or Fortran code under cursor -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2013-2017 Justine Tunney.
-;; Copyright (C) 2022 Abdelhak Bougouffa.
+;; Copyright (C) 2013-2022 Justine Tunney.
 
 ;; Author: Justine Tunney <jtunney@gmail.com>
 ;;         Abdelhak Bougouffa <abougouffa@fedoraproject.org>
@@ -9,7 +8,7 @@
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "27"))
 ;; Keywords: tools c
-;; URL: https://github.com/abougouffa/disaster
+;; URL: https://github.com/jart/disaster
 
 ;; This file is not part of GNU Emacs.
 
@@ -42,10 +41,6 @@
 ;; `cmake` (if you have a `compile_commands.json` file) or the default system
 ;; compiler. It then runs that file through `objdump` to generate the
 ;; human-readable assembly.
-;;
-;; This repo is a fork of [jart/disaster](https://github.com/jart/disaster)
-;; which seems unmaintainded since 2017. I merged some useful PRs opened on
-;; the original repo, rewritten some parts and ported it to Emacs 27+.
 
 ;;; Installation:
 
@@ -56,7 +51,7 @@
 ;; ```elisp
 ;; (add-to-list 'load-path "/PATH/TO/DISASTER")
 ;; (require 'disaster)
-;; (define-key c-mode-base-map (kbd "C-c d") 'disaster)
+;; (define-key c-mode-map (kbd "C-c d") 'disaster)
 ;; (define-key fortran-mode-map (kbd "C-c d") 'disaster)
 ;; ```
 
@@ -67,7 +62,7 @@
 ;; ```elisp
 ;; (package! disaster
 ;;   :recipe (:host github))
-;;            :repo "abougouffa/disaster"))
+;;            :repo "jart/disaster"))
 ;; ```
 ;;
 ;; And this to your `config.el`:
