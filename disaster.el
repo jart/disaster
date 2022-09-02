@@ -62,8 +62,7 @@
 ;;
 ;; ```elisp
 ;; (package! disaster
-;;   :recipe (:host github))
-;;            :repo "jart/disaster"))
+;;   :recipe (:host github :repo "jart/disaster"))
 ;; ```
 ;;
 ;; And this to your `config.el`:
@@ -76,7 +75,7 @@
 ;;   (setq disaster-assembly-mode 'nasm-mode)
 ;;
 ;;   (map! :localleader
-;;         :map (c++-mode-map c-mode-map fortran-mode-map)))
+;;         :map (c++-mode-map c-mode-map fortran-mode-map)
 ;;         :desc "Disaster" "d" #'disaster))
 ;; ```
 
