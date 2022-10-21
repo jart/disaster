@@ -56,8 +56,72 @@ And this to your `config.el`:
         :desc "Disaster" "d" #'disaster))
 ```
 
-### Function Documentation
 
+
+### Customization Documentation
+
+#### `disaster-make-flags`
+
+Command line options to pass to make if a Makefile is found.
+
+#### `disaster-assembly-mode`
+
+Which mode to use to view assembly code.
+
+#### `disaster-cc`
+
+The command for your C compiler.
+
+#### `disaster-cxx`
+
+The command for your C++ compiler.
+
+#### `disaster-fortran`
+
+The command for your Fortran compiler.
+
+#### `disaster-cflags`
+
+Command line options to use when compiling C.
+
+#### `disaster-cxxflags`
+
+Command line options to use when compiling C++.!
+
+#### `disaster-fortranflags`
+
+Command line options to use when compiling Fortran.
+
+#### `disaster-objdump`
+
+The command name and flags for running objdump.
+
+#### `disaster-buffer-compiler`
+
+Buffer name to use for assembler output.
+
+#### `disaster-buffer-assembly`
+
+Buffer name to use for objdump assembly output.
+
+#### `disaster-project-root-files`
+
+List of lists of files that may indicate software project root directory.
+Sublist are ordered from highest to lowest precedence.
+
+#### `disaster-c-regexp`
+
+Regexp for C source files.
+
+#### `disaster-cpp-regexp`
+
+Regexp for C++ source files.
+
+#### `disaster-fortran-regexp`
+
+Regexp for Fortran source files.
+
+### Function and Macro Documentation
 
 #### `(disaster-create-compile-command-make MAKE-ROOT CWD REL-OBJ OBJ-FILEPROJ-ROOT REL-FILE FILE)`
 
@@ -68,8 +132,6 @@ REL-OBJ: path to object file (relative to project root),
 OBJ-FILE: full path to object file (build root!)
 PROJ-ROOT: path to project root, REL-FILE FILE.
 
-
-
 #### `(disaster-create-compile-command-cmake MAKE-ROOT CWD REL-OBJ OBJ-FILEPROJ-ROOT REL-FILE)`
 
 Create compile command for a CMake-based project.
@@ -79,13 +141,9 @@ REL-OBJ: path to object file (relative to project root),
 OBJ-FILE: full path to object file (build root!)
 PROJ-ROOT: path to project root, REL-FILE FILE.
 
-
-
 #### `(disaster-get-object-file-path-cmake COMPILE-CMD)`
 
 Get the .o object file name from a full COMPILE-CMD.
-
-
 
 #### `(disaster-create-compile-command USE-CMAKE MAKE-ROOT CWD REL-OBJOBJ-FILE PROJ-ROOT REL-FILE FILE)`
 
@@ -97,14 +155,10 @@ REL-OBJ: path to object file (relative to project root),
 OBJ-FILE: full path to object file (build root!)
 PROJ-ROOT: path to project root, REL-FILE FILE.
 
-
-
 #### `(disaster &optional FILE LINE)`
 
 Show assembly code for current line of C/C++ file.
-
 Here's the logic path it follows:
-
 - Is there a complile_commands.json in this directory? Get the object file
   name for the current file, and run it associated command.
 - Is there a Makefile in this directory? Run `make bufname.o`.
@@ -114,22 +168,17 @@ Here's the logic path it follows:
 - If build failed, display errors in compile-mode.
 - Run objdump inside a new window while maintaining focus.
 - Jump to line matching current line.
-
 If FILE and LINE are not specified, the current editing location
 is used.
-
-
 
 #### `(disaster-find-project-root &optional LOOKS FILE)`
 
 General-purpose Heuristic to detect bottom directory of project.
-
 First, this will try to use `(vc-root-dir)` to guess the project
 root directory, and falls back to manual check wich works by scanning
 parent directories of FILE (using `disaster--find-parent-dirs`) for certain
 types of files like a `.projectile` file or a `Makefile` (which is less
 preferred).
-
 The canonical structure of LOOKS is a list of lists of files
 to look for in each parent directory where sublists are ordered
 from highest precedence to lowest.  However you may specify
@@ -137,15 +186,11 @@ LOOKS as a single string or a list of strings for your
 convenience. If LOOKS is not specified, it'll default to
 `disaster-project-root-files`.
 
-
-
 #### `(disaster-find-build-root USE-CMAKE PROJECT-ROOT)`
 
 Find the root of build directory.
 USE-CMAKE: non nil to use CMake's compile_commands.json,
 PROJECT-ROOT: root directory of the project.
-
-
 
 -----
 <div style="padding-top:15px;color: #d0d0d0;">
