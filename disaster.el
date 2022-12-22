@@ -84,6 +84,17 @@
 (require 'json)
 (require 'vc)
 
+(defun disaster--is-mac-m1? ()
+  "Optimize for Mac M1 if true.
+If system type = darwin and cpu type = arm64 add apple m1 flag.
+Otherwise return the classic native flag."
+  (if (and (eq system-type 'darwin)
+           (lambda ()
+             (string= "arm64\n"
+                      (shell-command-to-string "uname -m"))))
+      "-mcpu=apple-m1"
+    "-march=native"))
+
 (defgroup disaster nil
   "Disassemble C/C++ under cursor (Works best with Clang)."
   :prefix "disaster-"
@@ -116,27 +127,26 @@
   :type 'string)
 
 (defcustom disaster-cflags (or (getenv "CFLAGS")
-                               "-march=native")
+                               (disaster--is-mac-m1?))
   "Command line options to use when compiling C."
   :group 'disaster
   :type 'string)
 
 (defcustom disaster-cxxflags (or (getenv "CXXFLAGS")
-                                 "-march=native")
+                                 (disaster--is-mac-m1?))
   "Command line options to use when compiling C++.!"
   :group 'disaster
   :type 'string)
 
 
 (defcustom disaster-fortranflags (or (getenv "FORTRANFLAGS")
-                                     "-march=native")
+                                     (disaster--is-mac-m1?))
   "Command line options to use when compiling Fortran."
   :group 'disaster
   :type 'string)
 
 (defcustom disaster-objdump
-  (concat (if (eq system-type 'darwin) "gobjdump" "objdump")
-          " -d -M att -Sl --no-show-raw-insn")
+  "objdump -d -M att -Sl --no-show-raw-insn"
   "The command name and flags for running objdump."
   :group 'disaster
   :type 'string)
