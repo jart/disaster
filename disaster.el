@@ -84,13 +84,11 @@
 (require 'json)
 (require 'vc)
 
-(defun disaster--is-mac-m1? ()
-  "Optimize for Mac M1 if true.
-If system type = darwin and cpu type = arm64 add apple m1 flag.
-Otherwise return the classic native flag."
-  (if ((lambda () (and (eq system-type 'darwin)
-                       (string= "arm64"
-                                (string-trim (shell-command-to-string "uname -m"))))))
+(defun disaster--arch-flags ()
+  "Select the right flags depending on the right architecture."
+  (if ((lambda () "Optimize for M1 family if true"
+         (and (eq system-type 'darwin)
+              (string= "arm64" (string-trim (shell-command-to-string "uname -m"))))))
       "-mcpu=apple-m1"
     "-march=native"))
 
@@ -126,20 +124,20 @@ Otherwise return the classic native flag."
   :type 'string)
 
 (defcustom disaster-cflags (or (getenv "CFLAGS")
-                               (disaster--is-mac-m1?))
+                               (disaster--arch-flags))
   "Command line options to use when compiling C."
   :group 'disaster
   :type 'string)
 
 (defcustom disaster-cxxflags (or (getenv "CXXFLAGS")
-                                 (disaster--is-mac-m1?))
+                                 (disaster--arch-flags))
   "Command line options to use when compiling C++.!"
   :group 'disaster
   :type 'string)
 
 
 (defcustom disaster-fortranflags (or (getenv "FORTRANFLAGS")
-                                     (disaster--is-mac-m1?))
+                                     (disaster--arch-flags))
   "Command line options to use when compiling Fortran."
   :group 'disaster
   :type 'string)
