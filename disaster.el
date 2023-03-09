@@ -88,10 +88,9 @@
   "Optimize for Mac M1 if true.
 If system type = darwin and cpu type = arm64 add apple m1 flag.
 Otherwise return the classic native flag."
-  (if (and (eq system-type 'darwin)
-           (lambda ()
-             (string= "arm64\n"
-                      (shell-command-to-string "uname -m"))))
+  (if ((lambda () (and (eq system-type 'darwin)
+                       (string= "arm64"
+                                (string-trim (shell-command-to-string "uname -m"))))))
       "-mcpu=apple-m1"
     "-march=native"))
 
