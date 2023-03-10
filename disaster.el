@@ -84,11 +84,14 @@
 (require 'json)
 (require 'vc)
 
+(defun disaster--is-m1? ()
+  "Identify Mac M1 chips."
+  (and (eq system-type 'darwin)
+       (string= "aarch64" (car (split-string system-configuration "-")))))
+
 (defun disaster--arch-flags ()
   "Select the right flags depending on the right architecture."
-  (if ((lambda () "Optimize for M1 family if true"
-         (and (eq system-type 'darwin)
-              (string= "arm64" (string-trim (shell-command-to-string "uname -m"))))))
+  (if (disaster--is-m1?)
       "-mcpu=apple-m1"
     "-march=native"))
 
@@ -143,7 +146,11 @@
   :type 'string)
 
 (defcustom disaster-objdump
-  "objdump -d -M att -Sl --no-show-raw-insn"
+  (concat (if (and (eq system-type 'darwin)
+                   (not (disaster--is-m1?)))
+              "gobjdump"
+            "objdump")
+          " -d -M att -Sl --no-show-raw-insn")
   "The command name and flags for running objdump."
   :group 'disaster
   :type 'string)
