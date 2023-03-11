@@ -1,6 +1,6 @@
 ;;; disaster.el --- Disassemble C, C++ or Fortran code under cursor -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2013-2022 Justine Tunney.
+;; Copyright (C) 2013-2023 Justine Tunney.
 
 ;; Author: Justine Tunney <jtunney@gmail.com>
 ;;         Abdelhak Bougouffa <abougouffa@fedoraproject.org>
