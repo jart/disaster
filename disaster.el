@@ -72,7 +72,7 @@
 ;;   :commands (disaster)
 ;;   :init
 ;;   ;; If you prefer viewing assembly code in `nasm-mode` instead of `asm-mode`
-;;   (setq disaster-assembly-mode 'nasm-mode)
+;;   (setq disaster-assembly-mode #'nasm-mode)
 ;;
 ;;   (map! :localleader
 ;;         :map (c++-mode-map c-mode-map fortran-mode-map)
@@ -105,10 +105,10 @@
   :group 'disaster
   :type 'string)
 
-(defcustom disaster-assembly-mode 'asm-mode
+(defcustom disaster-assembly-mode #'asm-mode
   "Which mode to use to view assembly code."
   :group 'disaster
-  :type '(choice asm-mode nasm-mode))
+  :type 'function)
 
 (defcustom disaster-cc (or (getenv "CC") "cc")
   "The command for your C compiler."
@@ -134,7 +134,7 @@
 
 (defcustom disaster-cxxflags (or (getenv "CXXFLAGS")
                                  (disaster--arch-flags))
-  "Command line options to use when compiling C++.!"
+  "Command line options to use when compiling C++."
   :group 'disaster
   :type 'string)
 
@@ -198,7 +198,7 @@ If nil is returned, the next function will be tried.  If all
 functions return nil, the project root directory will be used as
 the build directory.")
 
-(defun disaster-create-compile-command-make (make-root cwd rel-obj obj-file proj-root rel-file file)
+(defun disaster-create-compile-command-make (make-root cwd rel-obj obj-file _proj-root _rel-file file)
   "Create compile command for a Make-based project.
 MAKE-ROOT: path to build root,
 CWD: path to current source file,
@@ -226,7 +226,7 @@ PROJ-ROOT: path to project root, REL-FILE FILE."
                    (shell-quote-argument obj-file) (shell-quote-argument file)))
           (t (warn "File %s do not seems to be a C, C++ or Fortran file." file)))))
 
-(defun disaster-create-compile-command-cmake (make-root cwd rel-obj obj-file proj-root rel-file)
+(defun disaster-create-compile-command-cmake (make-root _cwd _rel-obj _obj-file proj-root rel-file)
   "Create compile command for a CMake-based project.
 MAKE-ROOT: path to build root,
 CWD: path to current source file,
@@ -285,29 +285,27 @@ If FILE and LINE are not specified, the current editing location
 is used."
   (interactive)
   (save-buffer)
-  (let* ((file      (or file (file-name-nondirectory (buffer-file-name))))
-         (line      (or line (line-number-at-pos)))
+  (let* ((file (or file (file-name-nondirectory (buffer-file-name))))
+         (line (or line (line-number-at-pos)))
          (file-line (format "%s:%d" file line))
-         (makebuf   (get-buffer-create disaster-buffer-compiler))
-         (asmbuf    (get-buffer-create disaster-buffer-assembly)))
+         (makebuf (get-buffer-create disaster-buffer-compiler))
+         (asmbuf (get-buffer-create disaster-buffer-assembly)))
     (if (or (string-match-p disaster-c-regexp file)
             (string-match-p disaster-cpp-regexp file)
             (string-match-p disaster-fortran-regexp file))
-        (let* ((cwd       (file-name-directory (expand-file-name (buffer-file-name)))) ;; path to current source file
+        (let* ((cwd (file-name-directory (expand-file-name (buffer-file-name)))) ;; path to current source file
                (proj-root (disaster-find-project-root nil file)) ;; path to project root
                (use-cmake (file-exists-p (concat proj-root "/compile_commands.json")))
                (make-root (disaster-find-build-root use-cmake proj-root)) ;; path to build root
-               (rel-file  (if proj-root ;; path to source file (relative to project root)
-                              (file-relative-name file proj-root)
-                            file))
-               (rel-obj   (concat (file-name-sans-extension rel-file) ".o")) ;; path to object file (relative to project root)
-               (obj-file  (concat make-root rel-obj)) ;; full path to object file (build root!)
-               (cc        (disaster-create-compile-command use-cmake make-root cwd rel-obj obj-file proj-root rel-file file))
-               (dump      (format "%s %s" disaster-objdump
-                                  (shell-quote-argument (concat make-root rel-obj))))
-               (line-text (buffer-substring-no-properties
-                           (point-at-bol)
-                           (point-at-eol))))
+               (rel-file (if proj-root ;; path to source file (relative to project root)
+                             (file-relative-name file proj-root)
+                           file))
+               (rel-obj (concat (file-name-sans-extension rel-file) ".o")) ;; path to object file (relative to project root)
+               (obj-file (concat make-root rel-obj)) ;; full path to object file (build root!)
+               (cc (disaster-create-compile-command use-cmake make-root cwd rel-obj obj-file proj-root rel-file file))
+               (dump (format "%s %s" disaster-objdump
+                             (shell-quote-argument (concat make-root rel-obj))))
+               (line-text (buffer-substring-no-properties (line-beginning-position) (line-end-position))))
 
           ;; For CMake, read the object file from compile_commands.json
           (when use-cmake
@@ -339,8 +337,7 @@ is used."
                           (search-forward file-line nil t))
                       (progn
                         (recenter)
-                        (overlay-put (make-overlay (point-at-bol)
-                                                   (1+ (point-at-eol)))
+                        (overlay-put (make-overlay (line-beginning-position) (1+ (line-end-position)))
                                      'face 'region))
                     (message "Couldn't find corresponding assembly line."))
                   (switch-to-buffer-other-window oldbuf)))
